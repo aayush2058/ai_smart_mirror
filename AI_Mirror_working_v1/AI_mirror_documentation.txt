@@ -1,0 +1,121 @@
+COMPLETE STEP-BY-STEP AI SMART MIRROR GUIDE
+PART 1 — FROM ZERO TO WORKING AI MIRROR
+
+This guide starts from absolute beginning.
+
+Your target:
+
+real mirror
+AI overlay
+gesture control
+smooth body tracking
+RTX 3060 optimized
+cheapest working version
+OVERALL SYSTEM ARCHITECTURE
+Webcam / Depth Sensor
+        ↓
+OpenCV Video Feed
+        ↓
+MediaPipe Pose + Hands
+        ↓
+Gesture Detection Logic
+        ↓
+Overlay Rendering Engine
+        ↓
+Display Behind Mirror
+        ↓
+Visible Through Two-Way Mirror
+PHASE 1 — COMPUTER SETUP
+STEP 1 — INSTALL PYTHON
+Download
+
+Install:
+Python Downloads
+
+IMPORTANT SETTINGS
+
+During installation:
+
+ENABLE:
+
+☑ Add Python to PATH
+
+Then:
+
+Install Now
+STEP 2 — INSTALL VS CODE
+
+Install:
+Visual Studio Code
+
+STEP 3 — INSTALL VS CODE EXTENSIONS
+
+Open VS Code.
+
+Go to:
+
+Extensions
+
+Install:
+
+Extension	Purpose
+Python	Python support
+Pylance	IntelliSense
+Jupyter	Notebook support
+STEP 4 — INSTALL GIT
+
+Install:
+Git SCM
+
+STEP 5 — INSTALL NVIDIA CUDA
+Download CUDA
+
+Install:
+CUDA Toolkit
+
+Choose:
+
+Windows
+x86_64
+Version matching your system
+STEP 6 — VERIFY CUDA
+
+Open terminal:
+
+nvidia-smi
+
+If installed correctly:
+
+your GPU appears.
+PHASE 2 — CREATE PROJECT
+STEP 7 — CREATE PROJECT FOLDER
+
+Open terminal:
+
+mkdir AI_Mirror
+cd AI_Mirror
+STEP 8 — CREATE VIRTUAL ENVIRONMENT
+python -m venv venv
+
+Activate:
+
+Windows
+venv\Scripts\activate
+STEP 9 — INSTALL REQUIRED LIBRARIES
+
+Run ALL:
+
+pip install torch torchvision torchaudio
+pip install opencv-python
+pip install mediapipe
+pip install numpy
+pip install ultralytics
+pip install pygame
+WHAT EACH LIBRARY DOES
+Library	Purpose
+torch	AI engine
+opencv-python	Webcam/mirror
+mediapipe	Pose + gesture
+ultralytics	AI segmentation
+pygame	Overlay rendering
+numpy	Math

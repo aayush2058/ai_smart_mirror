@@ -1,0 +1,7 @@
+{
+    "width_scale": 1.8,
+    "height_scale": 1.4,
+    "vertical_offset": 0.14,
+    "smoothing_factor": 0.45,
+    "arm_occlusion": true
+}
