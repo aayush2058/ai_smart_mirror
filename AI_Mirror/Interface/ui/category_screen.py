@@ -1,13 +1,16 @@
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QGridLayout, QLabel, QPushButton
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QLabel, QPushButton
 from PySide6.QtCore import Qt
+
+from ui.common_widgets import create_map_button
 
 
 class CategoryScreen(QWidget):
-    def __init__(self, on_category_selected, on_back):
+    def __init__(self, on_category_selected, on_back, on_map):
         super().__init__()
 
         self.on_category_selected = on_category_selected
         self.on_back = on_back
+        self.on_map = on_map
         self.department = None
 
         self.main_layout = QVBoxLayout()
@@ -17,13 +20,22 @@ class CategoryScreen(QWidget):
         self.title = QLabel("Choose Category")
         self.title.setAlignment(Qt.AlignCenter)
         self.title.setStyleSheet("""
-            font-size: 42px;
-            font-weight: bold;
-            color: white;
+            QLabel {
+                font-size: 42px;
+                font-weight: bold;
+                color: white;
+                background-color: transparent;
+                border: none;
+            }
         """)
 
         self.grid = QGridLayout()
         self.grid.setSpacing(25)
+
+        bottom_bar = QHBoxLayout()
+
+        self.map_button = create_map_button()
+        self.map_button.clicked.connect(self.on_map)
 
         self.back_button = QPushButton("Back")
         self.back_button.setFixedSize(180, 55)
@@ -40,10 +52,14 @@ class CategoryScreen(QWidget):
         """)
         self.back_button.clicked.connect(self.on_back)
 
+        bottom_bar.addWidget(self.map_button, alignment=Qt.AlignLeft)
+        bottom_bar.addStretch()
+        bottom_bar.addWidget(self.back_button, alignment=Qt.AlignRight)
+
         self.main_layout.addWidget(self.title)
         self.main_layout.addLayout(self.grid)
         self.main_layout.addStretch()
-        self.main_layout.addWidget(self.back_button, alignment=Qt.AlignLeft)
+        self.main_layout.addLayout(bottom_bar)
 
         self.setLayout(self.main_layout)
         self.setStyleSheet("background-color: #111111;")

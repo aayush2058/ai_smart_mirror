@@ -1,13 +1,16 @@
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QGridLayout, QLabel, QPushButton
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QLabel, QPushButton
 from PySide6.QtCore import Qt
+
+from ui.common_widgets import create_map_button
 
 
 class DepartmentScreen(QWidget):
-    def __init__(self, on_department_selected, on_back):
+    def __init__(self, on_department_selected, on_back, on_map):
         super().__init__()
 
         self.on_department_selected = on_department_selected
         self.on_back = on_back
+        self.on_map = on_map
 
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(60, 40, 60, 40)
@@ -16,9 +19,13 @@ class DepartmentScreen(QWidget):
         title = QLabel("Choose Department")
         title.setAlignment(Qt.AlignCenter)
         title.setStyleSheet("""
-            font-size: 42px;
-            font-weight: bold;
-            color: white;
+            QLabel {
+                font-size: 42px;
+                font-weight: bold;
+                color: white;
+                background-color: transparent;
+                border: none;
+            }
         """)
 
         grid = QGridLayout()
@@ -59,6 +66,11 @@ class DepartmentScreen(QWidget):
             col = index % 3
             grid.addWidget(button, row, col, alignment=Qt.AlignCenter)
 
+        bottom_bar = QHBoxLayout()
+
+        self.map_button = create_map_button()
+        self.map_button.clicked.connect(self.on_map)
+
         back_button = QPushButton("Back")
         back_button.setFixedSize(180, 55)
         back_button.setStyleSheet("""
@@ -74,10 +86,14 @@ class DepartmentScreen(QWidget):
         """)
         back_button.clicked.connect(self.on_back)
 
+        bottom_bar.addWidget(self.map_button, alignment=Qt.AlignLeft)
+        bottom_bar.addStretch()
+        bottom_bar.addWidget(back_button, alignment=Qt.AlignRight)
+
         main_layout.addWidget(title)
         main_layout.addLayout(grid)
         main_layout.addStretch()
-        main_layout.addWidget(back_button, alignment=Qt.AlignLeft)
+        main_layout.addLayout(bottom_bar)
 
         self.setLayout(main_layout)
         self.setStyleSheet("background-color: #111111;")

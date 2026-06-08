@@ -27,17 +27,20 @@ class SmartMirrorApp(QMainWindow):
         self.setCentralWidget(self.stack)
 
         self.welcome_screen = WelcomeScreen(
-            on_start=self.go_to_department_screen
+            on_start=self.go_to_department_screen,
+            on_map=self.go_to_map_screen
         )
 
         self.department_screen = DepartmentScreen(
             on_department_selected=self.go_to_category_screen,
-            on_back=self.go_to_welcome_screen
+            on_back=self.go_to_welcome_screen,
+            on_map=self.go_to_map_screen
         )
 
         self.category_screen = CategoryScreen(
             on_category_selected=self.go_to_catalogue_screen,
-            on_back=self.go_to_department_screen
+            on_back=self.go_to_department_screen,
+            on_map=self.go_to_map_screen
         )
 
         self.catalogue_screen = CatalogueScreen(

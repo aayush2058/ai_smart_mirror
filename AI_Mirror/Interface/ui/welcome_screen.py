@@ -1,51 +1,80 @@
-from PySide6.QtWidgets import QWidget, QVBoxLayout, QLabel, QPushButton
+from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton
 from PySide6.QtCore import Qt
+
+from ui.common_widgets import create_map_button
 
 
 class WelcomeScreen(QWidget):
-    def __init__(self, on_start):
+    def __init__(self, on_start, on_map):
         super().__init__()
 
         self.on_start = on_start
+        self.on_map = on_map
 
-        layout = QVBoxLayout()
-        layout.setAlignment(Qt.AlignCenter)
+        main_layout = QVBoxLayout()
+        main_layout.setContentsMargins(60, 50, 60, 40)
+        main_layout.setSpacing(30)
+
+        center_layout = QVBoxLayout()
+        center_layout.setAlignment(Qt.AlignCenter)
+        center_layout.setSpacing(25)
 
         title = QLabel("Welcome to Smart Mirror")
         title.setAlignment(Qt.AlignCenter)
         title.setStyleSheet("""
-            font-size: 48px;
-            font-weight: bold;
-            color: white;
+            QLabel {
+                font-size: 52px;
+                font-weight: bold;
+                color: white;
+                background-color: transparent;
+                border: none;
+            }
         """)
 
         subtitle = QLabel("Browse products, find locations, and try outfits virtually")
         subtitle.setAlignment(Qt.AlignCenter)
         subtitle.setStyleSheet("""
-            font-size: 22px;
-            color: #cccccc;
+            QLabel {
+                font-size: 24px;
+                color: #cccccc;
+                background-color: transparent;
+                border: none;
+            }
         """)
 
         start_button = QPushButton("Start Shopping")
-        start_button.setFixedSize(300, 70)
+        start_button.setFixedSize(320, 75)
         start_button.setStyleSheet("""
             QPushButton {
-                font-size: 24px;
+                font-size: 25px;
+                font-weight: bold;
                 background-color: #2d89ef;
                 color: white;
-                border-radius: 15px;
+                border-radius: 16px;
             }
             QPushButton:hover {
                 background-color: #1b5fbd;
             }
         """)
-
         start_button.clicked.connect(self.on_start)
 
-        layout.addWidget(title)
-        layout.addWidget(subtitle)
-        layout.addSpacing(40)
-        layout.addWidget(start_button, alignment=Qt.AlignCenter)
+        center_layout.addWidget(title)
+        center_layout.addWidget(subtitle)
+        center_layout.addSpacing(35)
+        center_layout.addWidget(start_button, alignment=Qt.AlignCenter)
 
-        self.setLayout(layout)
+        bottom_bar = QHBoxLayout()
+
+        self.map_button = create_map_button()
+        self.map_button.clicked.connect(self.on_map)
+
+        bottom_bar.addWidget(self.map_button, alignment=Qt.AlignLeft)
+        bottom_bar.addStretch()
+
+        main_layout.addStretch()
+        main_layout.addLayout(center_layout)
+        main_layout.addStretch()
+        main_layout.addLayout(bottom_bar)
+
+        self.setLayout(main_layout)
         self.setStyleSheet("background-color: #111111;")
