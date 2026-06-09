@@ -2,13 +2,14 @@ import sys
 from PySide6.QtWidgets import QApplication, QMainWindow, QStackedWidget
 
 from product_catalog import ProductCatalog
-
+from ui.tryon_screen import TryOnScreen
 from ui.welcome_screen import WelcomeScreen
 from ui.department_screen import DepartmentScreen
 from ui.category_screen import CategoryScreen
 from ui.catalogue_screen import CatalogueScreen
 from ui.product_detail_screen import ProductDetailScreen
-
+from ui.camera_warning_screen import CameraWarningScreen
+from ui.map_screen import MapScreen
 
 class SmartMirrorApp(QMainWindow):
     def __init__(self):
@@ -26,9 +27,17 @@ class SmartMirrorApp(QMainWindow):
         self.stack = QStackedWidget()
         self.setCentralWidget(self.stack)
 
+        self.previous_screen_before_map = None
+
+        self.map_screen = MapScreen(
+            on_back=self.go_back_from_map
+        )
         self.welcome_screen = WelcomeScreen(
-            on_start=self.go_to_department_screen,
-            on_map=self.go_to_map_screen
+            on_start=self.go_to_department_screen
+        )
+
+        self.tryon_screen = TryOnScreen(
+            on_exit=self.exit_virtual_try_on
         )
 
         self.department_screen = DepartmentScreen(
@@ -55,13 +64,20 @@ class SmartMirrorApp(QMainWindow):
             on_map=self.go_to_map_screen
         )
 
+        self.camera_warning_screen = CameraWarningScreen(
+            on_cancel=self.go_back_to_product_detail,
+            on_agree=self.start_virtual_try_on
+        )
+
         self.stack.addWidget(self.welcome_screen)
         self.stack.addWidget(self.department_screen)
         self.stack.addWidget(self.category_screen)
         self.stack.addWidget(self.catalogue_screen)
         self.stack.addWidget(self.product_detail_screen)
-
+        self.stack.addWidget(self.camera_warning_screen)
         self.stack.setCurrentWidget(self.welcome_screen)
+        self.stack.addWidget(self.map_screen)
+        self.stack.addWidget(self.tryon_screen)
 
     def go_to_welcome_screen(self):
         self.stack.setCurrentWidget(self.welcome_screen)
@@ -103,11 +119,32 @@ class SmartMirrorApp(QMainWindow):
 
     def go_to_camera_warning_screen(self, product):
         self.selected_product = product
-        print(f"Virtual Try On selected for: {product.get('name')}")
-
+        self.camera_warning_screen.set_product(product)
+        self.stack.setCurrentWidget(self.camera_warning_screen)
+    
     def go_to_map_screen(self):
-        print("Map button clicked")
+        self.previous_screen_before_map = self.stack.currentWidget()
+        self.map_screen.set_product(self.selected_product)
+        self.stack.setCurrentWidget(self.map_screen)
 
+    def go_back_to_product_detail(self):
+        self.stack.setCurrentWidget(self.product_detail_screen)
+
+
+    def start_virtual_try_on(self, product):
+        self.selected_product = product
+        self.tryon_screen.set_product(product)
+        self.stack.setCurrentWidget(self.tryon_screen)
+    
+    
+    def go_back_from_map(self):
+        if hasattr(self, "previous_screen_before_map") and self.previous_screen_before_map:
+            self.stack.setCurrentWidget(self.previous_screen_before_map)
+        else:
+            self.stack.setCurrentWidget(self.department_screen)
+
+    def exit_virtual_try_on(self):
+        self.stack.setCurrentWidget(self.product_detail_screen)
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

@@ -37,7 +37,7 @@
             "L"
         ],
         "available": true,
-        "discount": false,
+        "discount": true,
         "location": "Men Section / Upper Fit / Shirts Area",
         "image": "img/shirts/shirt2.png",
         "tryon_category": "Shirts",
@@ -182,7 +182,7 @@
             "L"
         ],
         "available": true,
-        "discount": false,
+        "discount": true,
         "location": "Men Section / Lower Fit / Shorts Area",
         "image": "img/pants/short2.png",
         "tryon_category": "Pants",

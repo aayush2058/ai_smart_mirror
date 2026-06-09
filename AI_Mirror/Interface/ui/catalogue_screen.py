@@ -36,6 +36,9 @@ class CatalogueScreen(QWidget):
         self.main_layout.setContentsMargins(40, 30, 40, 30)
         self.main_layout.setSpacing(20)
 
+        # -------------------------
+        # PAGE TITLE
+        # -------------------------
         self.title = QLabel("Catalogue")
         self.title.setAlignment(Qt.AlignCenter)
         self.title.setStyleSheet("""
@@ -80,6 +83,7 @@ class CatalogueScreen(QWidget):
 
         self.product_container = QWidget()
 
+        # 2 columns, vertical scrolling
         self.product_grid = QGridLayout()
         self.product_grid.setSpacing(28)
         self.product_grid.setContentsMargins(20, 20, 20, 20)
@@ -150,7 +154,9 @@ class CatalogueScreen(QWidget):
             self.product_grid.addWidget(empty_label, 0, 0, 1, 2)
             return
 
-        # 2 columns, vertical scrolling
+        # -------------------------
+        # 2 COLUMNS, VERTICAL SCROLL
+        # -------------------------
         for index, product in enumerate(self.products):
             card = self.create_product_card(product)
 
@@ -166,6 +172,7 @@ class CatalogueScreen(QWidget):
         card.setCursor(Qt.PointingHandCursor)
         card.setObjectName("productCard")
 
+        # Only the full card highlights as one piece
         card.setStyleSheet("""
             QFrame#productCard {
                 background-color: #1f1f1f;
@@ -183,6 +190,9 @@ class CatalogueScreen(QWidget):
         layout.setContentsMargins(22, 18, 22, 18)
         layout.setSpacing(10)
 
+        # -------------------------
+        # PRODUCT IMAGE WITH DISCOUNT BADGE
+        # -------------------------
         image_box = QLabel()
         image_box.setFixedSize(475, 225)
         image_box.setAlignment(Qt.AlignCenter)
@@ -215,6 +225,31 @@ class CatalogueScreen(QWidget):
         else:
             image_box.setText("No Image")
 
+        # Discount badge stays inside the image area.
+        # It does not take extra space, so image/card size remains the same.
+        discount_badge = QLabel("DISCOUNT", image_box)
+        discount_badge.setAlignment(Qt.AlignCenter)
+        discount_badge.setFixedSize(120, 32)
+        discount_badge.move(340, 10)
+        discount_badge.setStyleSheet("""
+            QLabel {
+                font-size: 15px;
+                font-weight: bold;
+                color: #ffcc00;
+                background-color: rgba(0, 0, 0, 160);
+                border-radius: 10px;
+                border: none;
+            }
+        """)
+
+        if product.get("discount"):
+            discount_badge.show()
+        else:
+            discount_badge.hide()
+
+        # -------------------------
+        # PRODUCT NAME
+        # -------------------------
         name = QLabel(product.get("name", "Unnamed Product"))
         name.setAlignment(Qt.AlignCenter)
         name.setWordWrap(True)
@@ -228,6 +263,9 @@ class CatalogueScreen(QWidget):
             }
         """)
 
+        # -------------------------
+        # PRODUCT PRICE
+        # -------------------------
         price = QLabel(str(product.get("price", "N/A")))
         price.setAlignment(Qt.AlignCenter)
         price.setStyleSheet("""

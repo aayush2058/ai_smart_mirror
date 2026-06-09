@@ -1,15 +1,12 @@
 from PySide6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton
 from PySide6.QtCore import Qt
 
-from ui.common_widgets import create_map_button
-
 
 class WelcomeScreen(QWidget):
-    def __init__(self, on_start, on_map):
+    def __init__(self, on_start):
         super().__init__()
 
         self.on_start = on_start
-        self.on_map = on_map
 
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(60, 50, 60, 40)
@@ -63,18 +60,10 @@ class WelcomeScreen(QWidget):
         center_layout.addSpacing(35)
         center_layout.addWidget(start_button, alignment=Qt.AlignCenter)
 
-        bottom_bar = QHBoxLayout()
-
-        self.map_button = create_map_button()
-        self.map_button.clicked.connect(self.on_map)
-
-        bottom_bar.addWidget(self.map_button, alignment=Qt.AlignLeft)
-        bottom_bar.addStretch()
 
         main_layout.addStretch()
         main_layout.addLayout(center_layout)
         main_layout.addStretch()
-        main_layout.addLayout(bottom_bar)
 
         self.setLayout(main_layout)
         self.setStyleSheet("background-color: #111111;")
