@@ -133,10 +133,10 @@ class SmartMirrorApp(QMainWindow):
 
     def start_virtual_try_on(self, product):
         self.selected_product = product
-        self.tryon_screen.set_product(product)
+        self.tryon_screen.start_camera(product)
         self.stack.setCurrentWidget(self.tryon_screen)
     
-    
+
     def go_back_from_map(self):
         if hasattr(self, "previous_screen_before_map") and self.previous_screen_before_map:
             self.stack.setCurrentWidget(self.previous_screen_before_map)
@@ -144,6 +144,7 @@ class SmartMirrorApp(QMainWindow):
             self.stack.setCurrentWidget(self.department_screen)
 
     def exit_virtual_try_on(self):
+        self.tryon_screen.stop_camera()
         self.stack.setCurrentWidget(self.product_detail_screen)
 
 if __name__ == "__main__":
