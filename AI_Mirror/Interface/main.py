@@ -10,6 +10,7 @@ from ui.catalogue_screen import CatalogueScreen
 from ui.product_detail_screen import ProductDetailScreen
 from ui.camera_warning_screen import CameraWarningScreen
 from ui.map_screen import MapScreen
+from admin_ui.admin_login_screen import AdminLoginScreen
 
 class SmartMirrorApp(QMainWindow):
     def __init__(self):
@@ -40,10 +41,16 @@ class SmartMirrorApp(QMainWindow):
             on_exit=self.exit_virtual_try_on
         )
 
+        self.admin_login_screen = AdminLoginScreen(
+            on_login=self.handle_admin_login,
+            on_cancel=self.go_to_department_screen
+        )
+
         self.department_screen = DepartmentScreen(
             on_department_selected=self.go_to_category_screen,
             on_back=self.go_to_welcome_screen,
-            on_map=self.go_to_map_screen
+            on_map=self.go_to_map_screen,
+            on_staff_access=self.go_to_admin_login
         )
 
         self.category_screen = CategoryScreen(
@@ -78,9 +85,28 @@ class SmartMirrorApp(QMainWindow):
         self.stack.setCurrentWidget(self.welcome_screen)
         self.stack.addWidget(self.map_screen)
         self.stack.addWidget(self.tryon_screen)
+        self.stack.addWidget(self.admin_login_screen)
 
     def go_to_welcome_screen(self):
         self.stack.setCurrentWidget(self.welcome_screen)
+
+    def go_to_admin_login(self):
+        self.admin_login_screen.clear_form()
+        self.stack.setCurrentWidget(
+            self.admin_login_screen
+        )
+    
+    # Testing admin screen
+    def handle_admin_login(self, username, password):
+        if username == "admin" and password == "admin123":
+            self.admin_login_screen.clear_error()
+            self.admin_login_screen.show_success("access verified")
+            print("Admin login successful")
+            print("Next screen will be Admin Dashboard")
+        else:
+            self.admin_login_screen.show_error(
+                "Incorrect username or password."
+            )
 
     def go_to_department_screen(self):
         self.stack.setCurrentWidget(self.department_screen)
