@@ -1,0 +1,12 @@
+{
+    "shirt_width_scale": 1.7,
+    "shirt_height_scale": 1.3,
+    "shirt_vertical_offset": 0.12,
+    "shirt_horizontal_offset": 0,
+    "pants_width_scale": 4.5,
+    "pants_height_scale": 1.35,
+    "pants_vertical_offset": 0.2,
+    "pants_horizontal_offset": 10,
+    "smoothing_factor": 0.45,
+    "arm_occlusion": false
+}
