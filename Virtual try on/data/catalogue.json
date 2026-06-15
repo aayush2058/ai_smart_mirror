@@ -1,0 +1,151 @@
+[
+    {
+        "name": "Miami",
+        "price": "\u00a312.99",
+        "colour": "easy Pink",
+        "category": "Shirts",
+        "image": "img/shirts/shirt1.png",
+        "parts": {
+            "body": "img/shirts/inter_miami/shirt1_body.png",
+            "left_sleeve": "img/shirts/inter_miami/shirt1_left_sleeve.png",
+            "right_sleeve": "img/shirts/inter_miami/shirt1_right_sleeve.png"
+        },
+        "fit": {
+            "width_scale": 2.75,
+            "height_scale": 1.4,
+            "vertical_offset": 0.22,
+            "horizontal_offset": 15,
+            "left_sleeve_width_scale": 0.5,
+            "left_sleeve_height_scale": 0.46,
+            "left_sleeve_along_arm": 18,
+            "left_sleeve_outward": -2,
+            "left_sleeve_down": 18,
+            "left_sleeve_rotation_bias": -150,
+            "right_sleeve_width_scale": 0.45,
+            "right_sleeve_height_scale": 0.47,
+            "right_sleeve_along_arm": 18,
+            "right_sleeve_outward": -24,
+            "right_sleeve_down": -18,
+            "right_sleeve_rotation_bias": 14,
+            "sleeve_fold_strength": 0.25
+        },
+        "anchors": {
+            "left_sleeve": {
+                "shoulder_x": 0.78,
+                "shoulder_y": 0.18,
+                "direction_x": 0.45,
+                "direction_y": 0.65
+            },
+            "right_sleeve": {
+                "shoulder_x": 0.22,
+                "shoulder_y": 0.18,
+                "direction_x": 0.55,
+                "direction_y": 0.65
+            }
+        }
+    },
+    {
+        "name": "Blue Casual T-Shirt",
+        "price": "\u00a311.99",
+        "colour": "Blue",
+        "category": "Shirts",
+        "image": "img/shirts/shirt2.png",
+        "fit": {
+            "width_scale": 2.0,
+            "height_scale": 1.2,
+            "vertical_offset": 0.16,
+            "horizontal_offset": 5
+        }
+    },
+    {
+        "name": "Red Summer Shirt",
+        "price": "\u00a314.99",
+        "colour": "Red",
+        "category": "Shirts",
+        "image": "img/shirts/shirt3.png",
+        "fit": {
+            "width_scale": 2.4,
+            "height_scale": 1.35,
+            "vertical_offset": 0.18,
+            "horizontal_offset": 5
+        }
+    },
+    {
+        "name": "White Slim Fit Top",
+        "price": "\u00a312.99",
+        "colour": "White",
+        "category": "Shirts",
+        "image": "img/shirts/shirt4.png",
+        "fit": {
+            "width_scale": 2.5,
+            "height_scale": 1.4,
+            "vertical_offset": 0.2,
+            "horizontal_offset": 5
+        }
+    },
+    {
+        "name": "Transparent T-Shirt",
+        "price": "\u00a39.99",
+        "colour": "Transparent",
+        "category": "Shirts",
+        "image": "img/shirts/shirt5.png",
+        "fit": {
+            "width_scale": 1.9,
+            "height_scale": 1.4,
+            "vertical_offset": 0.14,
+            "horizontal_offset": 5
+        }
+    },
+    {
+        "name": "Transparent Pants",
+        "price": "\u00a317.99",
+        "colour": "Black",
+        "category": "Pants",
+        "image": "img/pants/pant1.png",
+        "fit": {
+            "width_scale": 3.85,
+            "height_scale": 1.35,
+            "vertical_offset": 0.18,
+            "horizontal_offset": 10
+        }
+    },
+    {
+        "name": "Blue Denim Jeans",
+        "price": "\u00a324.99",
+        "colour": "Blue",
+        "category": "Pants",
+        "image": "img/pants/pant2.png",
+        "fit": {
+            "width_scale": 5.85,
+            "height_scale": 1.45,
+            "vertical_offset": 0.2,
+            "horizontal_offset": 0
+        }
+    },
+    {
+        "name": "Black Summer Shorts",
+        "price": "\u00a312.99",
+        "colour": "Black",
+        "category": "Pants",
+        "image": "img/pants/short1.png",
+        "fit": {
+            "width_scale": 3.9,
+            "height_scale": 1.1,
+            "vertical_offset": 0.34,
+            "horizontal_offset": 0
+        }
+    },
+    {
+        "name": "Miami",
+        "price": "\u00a312.99",
+        "colour": "easy Pink",
+        "category": "Pants",
+        "image": "img/pants/short2.png",
+        "fit": {
+            "width_scale": 3.8,
+            "height_scale": 1.0,
+            "vertical_offset": 0.34,
+            "horizontal_offset": 0
+        }
+    }
+]
