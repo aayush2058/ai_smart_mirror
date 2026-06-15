@@ -1,7 +1,6 @@
 import sys
 from PySide6.QtWidgets import QApplication, QMainWindow, QStackedWidget
-
-from product_catalog import ProductCatalog
+from services.product_service import ProductCatalog
 from ui.tryon_screen import TryOnScreen
 from ui.welcome_screen import WelcomeScreen
 from ui.department_screen import DepartmentScreen
@@ -11,6 +10,9 @@ from ui.product_detail_screen import ProductDetailScreen
 from ui.camera_warning_screen import CameraWarningScreen
 from ui.map_screen import MapScreen
 from admin_ui.admin_login_screen import AdminLoginScreen
+from database.schema import create_database_schema
+from paths import ensure_directories
+from paths import ensure_directories
 
 class SmartMirrorApp(QMainWindow):
     def __init__(self):
@@ -174,6 +176,8 @@ class SmartMirrorApp(QMainWindow):
         self.stack.setCurrentWidget(self.product_detail_screen)
 
 if __name__ == "__main__":
+    ensure_directories()
+    create_database_schema()
     app = QApplication(sys.argv)
 
     window = SmartMirrorApp()
