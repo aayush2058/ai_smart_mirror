@@ -1,0 +1,196 @@
+[
+    {
+        "id": "shirt_001",
+        "name": "Blue Casual T-Shirt",
+        "department": "Men",
+        "category": "Upper Fit",
+        "price": "£11.99",
+        "colour": "Blue",
+        "sizes": [
+            "S",
+            "M",
+            "L",
+            "XL"
+        ],
+        "available": true,
+        "discount": false,
+        "location": "Men Section / Upper Fit / Shirts Area",
+        "image": "img/shirts/shirt1.png",
+        "tryon_category": "Shirts",
+        "fit": {
+            "width_scale": 2.0,
+            "height_scale": 1.2,
+            "vertical_offset": 0.16,
+            "horizontal_offset": 5
+        }
+    },
+    {
+        "id": "shirt_003",
+        "name": "Red Summer Shirt",
+        "department": "Men",
+        "category": "Upper Fit",
+        "price": "£14.99",
+        "colour": "Red",
+        "sizes": [
+            "S",
+            "M",
+            "L"
+        ],
+        "available": true,
+        "discount": true,
+        "location": "Men Section / Upper Fit / Shirts Area",
+        "image": "img/shirts/shirt2.png",
+        "tryon_category": "Shirts",
+        "fit": {
+            "width_scale": 2.4,
+            "height_scale": 1.35,
+            "vertical_offset": 0.18,
+            "horizontal_offset": 5
+        }
+    },
+    {
+        "id": "shirt_004",
+        "name": "White Slim Fit Top",
+        "department": "Men",
+        "category": "Upper Fit",
+        "price": "£12.99",
+        "colour": "White",
+        "sizes": [
+            "S",
+            "M",
+            "L"
+        ],
+        "available": true,
+        "discount": false,
+        "location": "Men Section / Upper Fit / Shirts Area",
+        "image": "img/shirts/shirt3.png",
+        "tryon_category": "Shirts",
+        "fit": {
+            "width_scale": 2.5,
+            "height_scale": 1.4,
+            "vertical_offset": 0.2,
+            "horizontal_offset": 5
+        }
+    },
+    {
+        "id": "shirt_005",
+        "name": "Transparent T-Shirt",
+        "department": "Men",
+        "category": "Upper Fit",
+        "price": "£9.99",
+        "colour": "Transparent",
+        "sizes": [
+            "S",
+            "M",
+            "L"
+        ],
+        "available": true,
+        "discount": true,
+        "location": "Men Section / Upper Fit / Discount Shirts Area",
+        "image": "img/shirts/shirt4.png",
+        "tryon_category": "Shirts",
+        "fit": {
+            "width_scale": 1.9,
+            "height_scale": 1.4,
+            "vertical_offset": 0.14,
+            "horizontal_offset": 5
+        }
+    },
+    {
+        "id": "pants_001",
+        "name": "Transparent Pants",
+        "department": "Men",
+        "category": "Lower Fit",
+        "price": "£17.99",
+        "colour": "Black",
+        "sizes": [
+            "30",
+            "32",
+            "34"
+        ],
+        "available": true,
+        "discount": false,
+        "location": "Men Section / Lower Fit / Pants Area",
+        "image": "img/pants/pant1.png",
+        "tryon_category": "Pants",
+        "fit": {
+            "width_scale": 3.85,
+            "height_scale": 1.35,
+            "vertical_offset": 0.18,
+            "horizontal_offset": 10
+        }
+    },
+    {
+        "id": "pants_002",
+        "name": "Blue Denim Jeans",
+        "department": "Men",
+        "category": "Lower Fit",
+        "price": "£24.99",
+        "colour": "Blue",
+        "sizes": [
+            "30",
+            "32",
+            "34",
+            "36"
+        ],
+        "available": true,
+        "discount": false,
+        "location": "Men Section / Lower Fit / Jeans Area",
+        "image": "img/pants/pant2.png",
+        "tryon_category": "Pants",
+        "fit": {
+            "width_scale": 5.85,
+            "height_scale": 1.45,
+            "vertical_offset": 0.2,
+            "horizontal_offset": 0
+        }
+    },
+    {
+        "id": "pants_003",
+        "name": "Black Summer Shorts",
+        "department": "Men",
+        "category": "Lower Fit",
+        "price": "£12.99",
+        "colour": "Black",
+        "sizes": [
+            "S",
+            "M",
+            "L"
+        ],
+        "available": true,
+        "discount": true,
+        "location": "Men Section / Lower Fit / Discount Shorts Area",
+        "image": "img/pants/short1.png",
+        "tryon_category": "Pants",
+        "fit": {
+            "width_scale": 3.9,
+            "height_scale": 1.1,
+            "vertical_offset": 0.34,
+            "horizontal_offset": 0
+        }
+    },
+    {
+        "id": "pants_004",
+        "name": "Miami easy Pink Shorts",
+        "department": "Men",
+        "category": "Lower Fit",
+        "price": "£12.99",
+        "colour": "easy Pink",
+        "sizes": [
+            "S",
+            "M",
+            "L"
+        ],
+        "available": true,
+        "discount": true,
+        "location": "Men Section / Lower Fit / Shorts Area",
+        "image": "img/pants/short2.png",
+        "tryon_category": "Pants",
+        "fit": {
+            "width_scale": 3.8,
+            "height_scale": 1.0,
+            "vertical_offset": 0.34,
+            "horizontal_offset": 0
+        }
+    }
+]
