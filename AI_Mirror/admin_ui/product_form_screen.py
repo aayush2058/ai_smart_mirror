@@ -5,7 +5,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap
-
+from paths import resolve_project_path
 
 class ProductFormScreen(QWidget):
     def __init__(self, on_save, on_cancel, on_upload_image):
@@ -15,6 +15,7 @@ class ProductFormScreen(QWidget):
         self.on_cancel = on_cancel
         self.on_upload_image = on_upload_image
         self.image_path = ""
+        self.editing_product_id = None
 
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(25, 20, 25, 20)
@@ -115,14 +116,14 @@ class ProductFormScreen(QWidget):
             }
         """)
 
-        upload_button = QPushButton("Upload Image")
-        upload_button.setFixedSize(180, 52)
-        upload_button.setStyleSheet(self.blue_button_style())
-        upload_button.clicked.connect(self.handle_upload_image)
+        self.upload_button = QPushButton("Upload Image")
+        self.upload_button.setFixedSize(180, 52)
+        self.upload_button.setStyleSheet(self.blue_button_style())
+        self.upload_button.clicked.connect(self.handle_upload_image)
 
         image_row = QHBoxLayout()
         image_row.addWidget(self.image_preview)
-        image_row.addWidget(upload_button)
+        image_row.addWidget(self.upload_button)
         image_row.addStretch()
 
         button_row = QHBoxLayout()
@@ -234,7 +235,9 @@ class ProductFormScreen(QWidget):
             saved_path = self.on_upload_image(file_path, tryon_category)
             self.image_path = saved_path
 
-            pixmap = QPixmap(saved_path)
+            full_path = resolve_project_path(saved_path)
+            pixmap = QPixmap(str(full_path)) if full_path else QPixmap()
+            
             if not pixmap.isNull():
                 self.image_preview.setPixmap(
                     pixmap.scaled(170, 170, Qt.KeepAspectRatio, Qt.SmoothTransformation)
@@ -326,6 +329,7 @@ class ProductFormScreen(QWidget):
         self.image_path = ""
         self.image_preview.clear()
         self.image_preview.setText("No Image Selected")
+        self.upload_button.setText("Upload Image")
 
     def blue_button_style(self):
         return """
@@ -366,3 +370,77 @@ class ProductFormScreen(QWidget):
                 background-color: #666666;
             }
         """
+    
+    def set_add_mode(self):
+        self.editing_product_id = None
+        self.clear_form()
+        self.upload_button.setText("Upload Image")
+
+    def set_edit_mode(self, product):
+        
+        self.clear_form()
+
+        self.editing_product_id = product.get("id")
+
+        self.product_code_input.setText(str(product.get("product_code", "")))
+        self.name_input.setText(str(product.get("name", "")))
+        self.price_input.setText(str(product.get("price", "")))
+        self.colour_input.setText(str(product.get("colour", "")))
+        self.location_input.setText(str(product.get("location", "")))
+        self.description_input.setPlainText(str(product.get("description", "")))
+
+        self.available_checkbox.setChecked(bool(product.get("available", True)))
+        self.discount_checkbox.setChecked(bool(product.get("discount", False)))
+        self.tryon_enabled_checkbox.setChecked(bool(product.get("tryon_enabled", False)))
+
+        if product.get("discount_price") is not None:
+            self.discount_price_input.setText(str(product.get("discount_price")))
+
+        self.image_path = product.get("image_path") or product.get("image") or ""
+        self.load_image_preview(self.image_path)
+        self.upload_button.setText("Change Image")
+
+        self.set_combo_value(self.department_combo, product.get("department", "Men"))
+        self.set_combo_value(self.category_combo, product.get("category", "Upper Fit"))
+
+        tryon_category = product.get("tryon_category") or "None"
+        self.set_combo_value(self.tryon_category_combo, tryon_category)
+
+        tryon_settings = product.get("tryon_settings") or {}
+
+        self.width_input.setText(str(tryon_settings.get("width_scale", product.get("width_scale", ""))))
+        self.height_input.setText(str(tryon_settings.get("height_scale", product.get("height_scale", ""))))
+        self.vertical_input.setText(str(tryon_settings.get("vertical_offset", product.get("vertical_offset", ""))))
+        self.horizontal_input.setText(str(tryon_settings.get("horizontal_offset", product.get("horizontal_offset", ""))))
+
+
+    def set_combo_value(self, combo, value):
+        index = combo.findText(str(value))
+
+        if index >= 0:
+            combo.setCurrentIndex(index)
+
+    def load_image_preview(self, image_path):
+        if not image_path:
+            self.image_preview.clear()
+            self.image_preview.setText("No Image Selected")
+            return
+
+        full_path = resolve_project_path(image_path)
+
+        if full_path and full_path.exists():
+            pixmap = QPixmap(str(full_path))
+
+            if not pixmap.isNull():
+                self.image_preview.setPixmap(
+                    pixmap.scaled(
+                        170,
+                        170,
+                        Qt.KeepAspectRatio,
+                        Qt.SmoothTransformation
+                    )
+                )
+                return
+
+        self.image_preview.clear()
+        self.image_preview.setText("Image Not Found")

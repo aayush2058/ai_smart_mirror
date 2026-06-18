@@ -4,10 +4,10 @@ from PySide6.QtWidgets import QApplication, QMainWindow, QStackedWidget
 
 from paths import ensure_directories
 from database.schema import create_database_schema
-
+from services.inventory_service import InventoryService
 from services.product_service import ProductCatalog
 from services.auth_service import AuthService
-
+from admin_ui.inventory_management_screen import InventoryManagementScreen
 from ui.welcome_screen import WelcomeScreen
 from ui.department_screen import DepartmentScreen
 from ui.category_screen import CategoryScreen
@@ -20,7 +20,7 @@ from admin_ui.product_form_screen import ProductFormScreen
 from services.product_service import ProductService
 from services.image_service import ImageService
 from admin_ui.product_management_screen import ProductManagementScreen
-
+from PySide6.QtWidgets import QMessageBox
 from admin_ui.admin_login_screen import AdminLoginScreen
 from admin_ui.admin_dashboard_screen import AdminDashboardScreen
 
@@ -36,7 +36,7 @@ class SmartMirrorApp(QMainWindow):
         self.selected_category = None
         self.selected_product = None
         self.previous_screen_before_map = None
-
+        self.inventory_service = InventoryService()
         self.current_admin = None
         self.auth_service = AuthService()
         self.product_service = ProductService()
@@ -73,6 +73,11 @@ class SmartMirrorApp(QMainWindow):
             on_save=self.save_new_product,
             on_cancel=self.go_to_manage_products,
             on_upload_image=self.upload_product_image
+        )
+
+        self.inventory_management_screen = InventoryManagementScreen(
+            on_back=self.go_to_admin_dashboard,
+            on_update_stock=self.go_to_update_stock
         )
 
         self.product_detail_screen = ProductDetailScreen(
@@ -129,6 +134,7 @@ class SmartMirrorApp(QMainWindow):
         self.stack.addWidget(self.product_management_screen)
         self.stack.setCurrentWidget(self.welcome_screen)
         self.stack.addWidget(self.product_form_screen)
+        self.stack.addWidget(self.inventory_management_screen)
 
     def go_to_welcome_screen(self):
         self.stack.setCurrentWidget(self.welcome_screen)
@@ -154,8 +160,7 @@ class SmartMirrorApp(QMainWindow):
             self.admin_login_screen.show_error("Incorrect username or password.")
 
     def update_admin_dashboard_summary(self):
-        products = self.catalog.products
-
+        products = self.product_service.get_products()
         total = len(products)
 
         available = sum(
@@ -181,16 +186,37 @@ class SmartMirrorApp(QMainWindow):
         )
 
     def go_to_manage_products(self):
-        self.catalog.reload()
-        self.product_management_screen.set_products(self.catalog.products)
+        products = self.product_service.get_products()
+        self.product_management_screen.set_products(products)
         self.stack.setCurrentWidget(self.product_management_screen)
-
+        
     def go_to_add_product(self):
         self.product_form_screen.clear_form()
         self.stack.setCurrentWidget(self.product_form_screen)
 
     def go_to_inventory(self):
-        print("Stock & Sizes clicked")
+        products = []
+
+        for product in self.product_service.get_products():
+            full_product = self.product_service.get_product(product.get("id"))
+            if full_product:
+                products.append(full_product)
+
+        self.inventory_management_screen.set_products(products)
+        self.stack.setCurrentWidget(self.inventory_management_screen)
+
+    def go_to_update_stock(self, product, sizes):
+        product_id = product.get("id")
+
+        if not product_id:
+            print("Product ID missing. Cannot update stock.")
+            return
+
+        self.inventory_service.replace_sizes(product_id, sizes)
+
+        print("Stock updated:", product.get("name"))
+
+        self.go_to_inventory()
 
     def go_to_discounts(self):
         print("Discounts clicked")
@@ -253,7 +279,25 @@ class SmartMirrorApp(QMainWindow):
         )
 
     def save_new_product(self, product_data):
-        product_id = self.product_service.add_product(product_data)
+        if self.product_form_screen.editing_product_id:
+            product_id = self.product_form_screen.editing_product_id
+
+            success = self.product_service.update_product(
+                product_id,
+                product_data
+            )
+
+            if success:
+                print("Product updated:", product_id)
+            else:
+                print("Product update failed:", product_id)
+
+        else:
+            product_id = self.product_service.add_product(product_data)
+            print("Product saved with ID:", product_id)
+
+        self.product_form_screen.clear_form()
+        self.go_to_manage_products()
 
         print("Product saved with ID:", product_id)
 
@@ -275,11 +319,55 @@ class SmartMirrorApp(QMainWindow):
 
 
     def go_to_edit_product(self, product):
-        print("Edit product:", product.get("name"))
+        product_id = product.get("id")
+
+        if not product_id:
+            print("Product ID missing. Cannot edit.")
+            return
+
+        full_product = self.product_service.get_product(product_id)
+
+        if not full_product:
+            print("Product not found.")
+            return
+
+        self.product_form_screen.set_edit_mode(full_product)
+        self.stack.setCurrentWidget(self.product_form_screen)
 
 
     def delete_product_from_admin(self, product):
-        print("Delete product:", product.get("name"))
+        from PySide6.QtWidgets import QMessageBox
+
+        products = product if isinstance(product, list) else [product]
+
+        if not products:
+            return
+
+        product_names = "\n".join(
+            f"- {item.get('name', 'Unnamed Product')}"
+            for item in products
+        )
+
+        confirm = QMessageBox.question(
+            self,
+            "Delete Product",
+            f"Are you sure you want to delete:\n\n{product_names}\n\n"
+            "These products will be removed from the active catalogue.",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No
+        )
+
+        if confirm != QMessageBox.Yes:
+            return
+
+        for item in products:
+            product_id = item.get("id")
+
+            if product_id:
+                self.product_service.delete_product(product_id)
+
+        self.go_to_manage_products()
+        self.update_admin_dashboard_summary()
 
     def go_to_map_screen(self):
         self.previous_screen_before_map = self.stack.currentWidget()

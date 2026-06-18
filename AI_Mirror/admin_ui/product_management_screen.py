@@ -1,6 +1,7 @@
+
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-    QPushButton, QScrollArea, QFrame, QLineEdit
+    QPushButton, QScrollArea, QFrame, QLineEdit, QCheckBox
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap
@@ -16,6 +17,7 @@ class ProductManagementScreen(QWidget):
         self.on_delete_product = on_delete_product
 
         self.products = []
+        self.selected_product_ids = set()
 
         self.main_layout = QVBoxLayout()
         self.main_layout.setContentsMargins(45, 35, 45, 35)
@@ -50,8 +52,25 @@ class ProductManagementScreen(QWidget):
         """)
         add_button.clicked.connect(self.on_add_product)
 
+        self.bulk_delete_button = QPushButton("Delete Selected")
+        self.bulk_delete_button.setFixedSize(190, 55)
+        self.bulk_delete_button.setStyleSheet("""
+            QPushButton {
+                font-size: 18px;
+                font-weight: bold;
+                background-color: #8b2d2d;
+                color: white;
+                border-radius: 12px;
+            }
+            QPushButton:hover {
+                background-color: #b13b3b;
+            }
+        """)
+        self.bulk_delete_button.clicked.connect(self.handle_bulk_delete)
+
         top_bar.addWidget(title)
         top_bar.addStretch()
+        top_bar.addWidget(self.bulk_delete_button)
         top_bar.addWidget(add_button)
 
         self.search_input = QLineEdit()
@@ -120,6 +139,7 @@ class ProductManagementScreen(QWidget):
 
     def set_products(self, products):
         self.products = products
+        self.selected_product_ids.clear()
         self.render_products(products)
 
     def filter_products(self):
@@ -186,9 +206,19 @@ class ProductManagementScreen(QWidget):
         image_label = QLabel()
         image_label.setFixedSize(80, 80)
 
-        image_path = product.get("image", "")
+        image_path = (
+            product.get("image_path")
+            or product.get("image")
+            or ""
+        )
 
-        pixmap = QPixmap(image_path)
+        print("Loading image:", image_path)
+        full_path = Path(image_path)
+
+        if full_path.exists():
+            pixmap = QPixmap(str(full_path))
+        else:
+            pixmap = QPixmap()
 
         if not pixmap.isNull():
             image_label.setPixmap(
@@ -202,6 +232,24 @@ class ProductManagementScreen(QWidget):
         else:
             image_label.setText("No\nImage")
             image_label.setAlignment(Qt.AlignCenter)
+
+        print("IMAGE PATH:", product.get("image"))
+        print("IMAGE PATH DB:", product.get("image_path"))
+
+        select_checkbox = QCheckBox()
+        select_checkbox.setFixedWidth(35)
+        select_checkbox.setStyleSheet("""
+            QCheckBox {
+                background-color: transparent;
+                border: none;
+            }
+        """)
+
+        product_id = product.get("id")
+
+        select_checkbox.toggled.connect(
+            lambda checked, pid=product_id: self.toggle_product_selection(pid, checked)
+        )
 
         info = QLabel(
             f"{product.get('name', 'Unnamed Product')}\n"
@@ -260,6 +308,7 @@ class ProductManagementScreen(QWidget):
         """)
         delete_button.clicked.connect(lambda checked=False, p=product: self.on_delete_product(p))
 
+        layout.addWidget(select_checkbox)
         layout.addWidget(image_label)
         layout.addWidget(info)
         layout.addStretch()
@@ -286,3 +335,24 @@ class ProductManagementScreen(QWidget):
 
             if widget:
                 widget.deleteLater()
+
+    def toggle_product_selection(self, product_id, checked):
+        if product_id is None:
+            return
+
+        if checked:
+            self.selected_product_ids.add(product_id)
+        else:
+            self.selected_product_ids.discard(product_id)
+
+
+    def handle_bulk_delete(self):
+        if not self.selected_product_ids:
+            return
+
+        selected_products = [
+            product for product in self.products
+            if product.get("id") in self.selected_product_ids
+        ]
+
+        self.on_delete_product(selected_products)
