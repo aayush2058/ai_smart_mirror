@@ -16,6 +16,10 @@ from ui.product_detail_screen import ProductDetailScreen
 from ui.camera_warning_screen import CameraWarningScreen
 from ui.map_screen import MapScreen
 from ui.tryon_screen import TryOnScreen
+from admin_ui.product_form_screen import ProductFormScreen
+from services.product_service import ProductService
+from services.image_service import ImageService
+from admin_ui.product_management_screen import ProductManagementScreen
 
 from admin_ui.admin_login_screen import AdminLoginScreen
 from admin_ui.admin_dashboard_screen import AdminDashboardScreen
@@ -35,7 +39,8 @@ class SmartMirrorApp(QMainWindow):
 
         self.current_admin = None
         self.auth_service = AuthService()
-
+        self.product_service = ProductService()
+        self.image_service = ImageService()
         self.catalog = ProductCatalog()
 
         self.stack = QStackedWidget()
@@ -64,12 +69,25 @@ class SmartMirrorApp(QMainWindow):
             on_map=self.go_to_map_screen
         )
 
+        self.product_form_screen = ProductFormScreen(
+            on_save=self.save_new_product,
+            on_cancel=self.go_to_manage_products,
+            on_upload_image=self.upload_product_image
+        )
+
         self.product_detail_screen = ProductDetailScreen(
             on_back=self.go_back_to_catalogue,
             on_try_on=self.go_to_camera_warning_screen,
             on_map=self.go_to_map_screen
         )
 
+        self.product_management_screen = ProductManagementScreen(
+            on_back=self.go_to_admin_dashboard,
+            on_add_product=self.go_to_add_product,
+            on_edit_product=self.go_to_edit_product,
+            on_delete_product=self.delete_product_from_admin
+        )
+        
         self.camera_warning_screen = CameraWarningScreen(
             on_cancel=self.go_back_to_product_detail,
             on_agree=self.start_virtual_try_on
@@ -108,8 +126,9 @@ class SmartMirrorApp(QMainWindow):
         self.stack.addWidget(self.tryon_screen)
         self.stack.addWidget(self.admin_login_screen)
         self.stack.addWidget(self.admin_dashboard_screen)
-
+        self.stack.addWidget(self.product_management_screen)
         self.stack.setCurrentWidget(self.welcome_screen)
+        self.stack.addWidget(self.product_form_screen)
 
     def go_to_welcome_screen(self):
         self.stack.setCurrentWidget(self.welcome_screen)
@@ -162,10 +181,13 @@ class SmartMirrorApp(QMainWindow):
         )
 
     def go_to_manage_products(self):
-        print("Manage Products clicked")
+        self.catalog.reload()
+        self.product_management_screen.set_products(self.catalog.products)
+        self.stack.setCurrentWidget(self.product_management_screen)
 
     def go_to_add_product(self):
-        print("Add Product clicked")
+        self.product_form_screen.clear_form()
+        self.stack.setCurrentWidget(self.product_form_screen)
 
     def go_to_inventory(self):
         print("Stock & Sizes clicked")
@@ -224,6 +246,20 @@ class SmartMirrorApp(QMainWindow):
     def go_back_to_product_detail(self):
         self.stack.setCurrentWidget(self.product_detail_screen)
 
+    def upload_product_image(self, file_path, tryon_category):
+        return self.image_service.save_product_image(
+            file_path,
+            tryon_category
+        )
+
+    def save_new_product(self, product_data):
+        product_id = self.product_service.add_product(product_data)
+
+        print("Product saved with ID:", product_id)
+
+        self.product_form_screen.clear_form()
+        self.go_to_manage_products()
+
     def start_virtual_try_on(self, product):
         self.selected_product = product
         self.tryon_screen.start_camera(product)
@@ -232,6 +268,18 @@ class SmartMirrorApp(QMainWindow):
     def exit_virtual_try_on(self):
         self.tryon_screen.stop_camera()
         self.stack.setCurrentWidget(self.product_detail_screen)
+
+    def go_to_admin_dashboard(self):
+        self.update_admin_dashboard_summary()
+        self.stack.setCurrentWidget(self.admin_dashboard_screen)
+
+
+    def go_to_edit_product(self, product):
+        print("Edit product:", product.get("name"))
+
+
+    def delete_product_from_admin(self, product):
+        print("Delete product:", product.get("name"))
 
     def go_to_map_screen(self):
         self.previous_screen_before_map = self.stack.currentWidget()
@@ -243,6 +291,8 @@ class SmartMirrorApp(QMainWindow):
             self.stack.setCurrentWidget(self.previous_screen_before_map)
         else:
             self.stack.setCurrentWidget(self.department_screen)
+
+
 
 
 if __name__ == "__main__":
