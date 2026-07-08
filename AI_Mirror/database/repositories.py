@@ -86,6 +86,68 @@ class ProductRepository:
                 )
 
             return product_id
+        
+    def update_tryon_settings(self, product_id: int, settings: dict):
+        with database_connection() as connection:
+            existing = connection.execute(
+                """
+                SELECT id
+                FROM tryon_settings
+                WHERE product_id = ?
+                """,
+                (product_id,)
+            ).fetchone()
+
+            if existing:
+                connection.execute(
+                    """
+                    UPDATE tryon_settings
+                    SET width_scale = ?,
+                        height_scale = ?,
+                        vertical_offset = ?,
+                        horizontal_offset = ?
+                    WHERE product_id = ?
+                    """,
+                    (
+                        settings.get("width_scale", 1.0),
+                        settings.get("height_scale", 1.0),
+                        settings.get("vertical_offset", 0.0),
+                        settings.get("horizontal_offset", 0),
+                        product_id,
+                    )
+                )
+            else:
+                connection.execute(
+                    """
+                    INSERT INTO tryon_settings (
+                        product_id,
+                        width_scale,
+                        height_scale,
+                        vertical_offset,
+                        horizontal_offset
+                    )
+                    VALUES (?, ?, ?, ?, ?)
+                    """,
+                    (
+                        product_id,
+                        settings.get("width_scale", 1.0),
+                        settings.get("height_scale", 1.0),
+                        settings.get("vertical_offset", 0.0),
+                        settings.get("horizontal_offset", 0),
+                    )
+                )
+
+            connection.execute(
+                """
+                UPDATE products
+                SET tryon_enabled = 1,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+                """,
+                (product_id,)
+            )
+
+            return True
 
     def get_all_products(self):
         with database_connection() as connection:
@@ -212,3 +274,16 @@ class ProductRepository:
             )
 
             return cursor.rowcount > 0
+        
+    def get_deleted_products(self):
+        with database_connection() as connection:
+            rows = connection.execute(
+                """
+                SELECT *
+                FROM products
+                WHERE active = 0
+                ORDER BY updated_at DESC
+                """
+            ).fetchall()
+
+            return [dict(row) for row in rows]

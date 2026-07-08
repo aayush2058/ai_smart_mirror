@@ -206,7 +206,9 @@ class CatalogueScreen(QWidget):
             }
         """)
 
-        image_from_json = product.get("image", "")
+        image_from_json = (product.get("image", "") 
+                           or product.get("image") 
+                           or "")
         image_path = self.get_project_root() / image_from_json
 
         if image_path.exists():

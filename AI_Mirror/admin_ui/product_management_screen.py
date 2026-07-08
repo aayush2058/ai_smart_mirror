@@ -8,13 +8,14 @@ from PySide6.QtGui import QPixmap
 from pathlib import Path
 
 class ProductManagementScreen(QWidget):
-    def __init__(self, on_back, on_add_product, on_edit_product, on_delete_product):
+    def __init__(self, on_back, on_add_product, on_edit_product, on_delete_product, on_deleted_products):
         super().__init__()
 
         self.on_back = on_back
         self.on_add_product = on_add_product
         self.on_edit_product = on_edit_product
         self.on_delete_product = on_delete_product
+        self.on_deleted_products = on_deleted_products
 
         self.products = []
         self.selected_product_ids = set()
@@ -68,10 +69,27 @@ class ProductManagementScreen(QWidget):
         """)
         self.bulk_delete_button.clicked.connect(self.handle_bulk_delete)
 
+        deleted_button = QPushButton("Deleted Products")
+        deleted_button.setFixedSize(190, 55)
+        deleted_button.setStyleSheet("""
+            QPushButton {
+                font-size: 18px;
+                font-weight: bold;
+                background-color: #5a5a5a;
+                color: white;
+                border-radius: 12px;
+            }
+            QPushButton:hover {
+                background-color: #777777;
+            }
+        """)
+        deleted_button.clicked.connect(self.on_deleted_products)
+
         top_bar.addWidget(title)
         top_bar.addStretch()
         top_bar.addWidget(self.bulk_delete_button)
         top_bar.addWidget(add_button)
+        top_bar.addWidget(deleted_button)
 
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText("Search products by name, category, colour or location...")
@@ -108,7 +126,7 @@ class ProductManagementScreen(QWidget):
 
         self.list_container.setLayout(self.list_layout)
         self.scroll_area.setWidget(self.list_container)
-
+        
         bottom_bar = QHBoxLayout()
 
         back_button = QPushButton("Back")

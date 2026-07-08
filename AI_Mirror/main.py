@@ -1,7 +1,7 @@
 import sys
-
+from admin_ui.tryon_settings_screen import TryOnSettingsScreen
 from PySide6.QtWidgets import QApplication, QMainWindow, QStackedWidget
-
+from admin_ui.discount_management_screen import DiscountManagementScreen
 from paths import ensure_directories
 from database.schema import create_database_schema
 from services.inventory_service import InventoryService
@@ -23,7 +23,8 @@ from admin_ui.product_management_screen import ProductManagementScreen
 from PySide6.QtWidgets import QMessageBox
 from admin_ui.admin_login_screen import AdminLoginScreen
 from admin_ui.admin_dashboard_screen import AdminDashboardScreen
-
+from admin_ui.location_management_screen import LocationManagementScreen
+from admin_ui.deleted_products_screen import DeletedProductsScreen
 
 class SmartMirrorApp(QMainWindow):
     def __init__(self):
@@ -42,7 +43,6 @@ class SmartMirrorApp(QMainWindow):
         self.product_service = ProductService()
         self.image_service = ImageService()
         self.catalog = ProductCatalog()
-
         self.stack = QStackedWidget()
         self.setCentralWidget(self.stack)
 
@@ -90,7 +90,8 @@ class SmartMirrorApp(QMainWindow):
             on_back=self.go_to_admin_dashboard,
             on_add_product=self.go_to_add_product,
             on_edit_product=self.go_to_edit_product,
-            on_delete_product=self.delete_product_from_admin
+            on_delete_product=self.delete_product_from_admin,
+            on_deleted_products=self.go_to_deleted_products
         )
         
         self.camera_warning_screen = CameraWarningScreen(
@@ -100,6 +101,16 @@ class SmartMirrorApp(QMainWindow):
 
         self.map_screen = MapScreen(
             on_back=self.go_back_from_map
+        )
+
+        self.discount_management_screen = DiscountManagementScreen(
+            on_back=self.go_to_admin_dashboard,
+            on_update_discount=self.update_product_discount
+        )
+
+        self.location_management_screen = LocationManagementScreen(
+            on_back=self.go_to_admin_dashboard,
+            on_update_location=self.update_product_location
         )
 
         self.tryon_screen = TryOnScreen(
@@ -121,6 +132,18 @@ class SmartMirrorApp(QMainWindow):
             on_logout=self.logout_admin
         )
 
+
+        self.tryon_settings_screen = TryOnSettingsScreen(
+            on_back=self.go_to_admin_dashboard,
+            on_update_tryon=self.update_product_tryon_settings
+        )
+
+        self.deleted_products_screen = DeletedProductsScreen(
+            on_back=self.go_to_manage_products,
+            on_restore_product=self.restore_deleted_product
+        )
+
+        self.stack.addWidget(self.tryon_settings_screen)
         self.stack.addWidget(self.welcome_screen)
         self.stack.addWidget(self.department_screen)
         self.stack.addWidget(self.category_screen)
@@ -135,6 +158,9 @@ class SmartMirrorApp(QMainWindow):
         self.stack.setCurrentWidget(self.welcome_screen)
         self.stack.addWidget(self.product_form_screen)
         self.stack.addWidget(self.inventory_management_screen)
+        self.stack.addWidget(self.location_management_screen)
+        self.stack.addWidget(self.discount_management_screen)
+        self.stack.addWidget(self.deleted_products_screen)
 
     def go_to_welcome_screen(self):
         self.stack.setCurrentWidget(self.welcome_screen)
@@ -219,13 +245,82 @@ class SmartMirrorApp(QMainWindow):
         self.go_to_inventory()
 
     def go_to_discounts(self):
-        print("Discounts clicked")
+        products = self.product_service.get_products()
+        self.discount_management_screen.set_products(products)
+        self.stack.setCurrentWidget(self.discount_management_screen)
 
     def go_to_locations(self):
-        print("Store Locations clicked")
+        products = self.product_service.get_products()
+        self.location_management_screen.set_products(products)
+        self.stack.setCurrentWidget(self.location_management_screen)
+    
+    def update_product_location(self, product, location):
+        product_id = product.get("id")
+
+        if not product_id:
+            print("Product ID missing. Cannot update location.")
+            return
+
+        success = self.product_service.update_product(
+            product_id,
+            {
+                "location": location
+            }
+        )
+
+        if success:
+            print("Location updated:", product.get("name"))
+            self.go_to_locations()
+        else:
+            print("Location update failed:", product.get("name"))
+    
+    def update_product_discount(self, product, discount_enabled, discount_price):
+        product_id = product.get("id")
+
+        if not product_id:
+            print("Product ID missing. Cannot update discount.")
+            return
+
+        success = self.product_service.update_product(
+            product_id,
+            {
+                "discount": int(discount_enabled),
+                "discount_price": discount_price
+            }
+        )
+
+        if success:
+            print("Discount updated:", product.get("name"))
+            self.go_to_discounts()
+            self.update_admin_dashboard_summary()
+        else:
+            print("Discount update failed:", product.get("name"))
 
     def go_to_tryon_settings(self):
-        print("Try-On Settings clicked")
+        products = []
+
+        for product in self.product_service.get_products():
+            full_product = self.product_service.get_product(product.get("id"))
+            if full_product:
+                products.append(full_product)
+
+        self.tryon_settings_screen.set_products(products)
+        self.stack.setCurrentWidget(self.tryon_settings_screen)
+
+    def update_product_tryon_settings(self, product, settings):
+        product_id = product.get("id")
+
+        if not product_id:
+            print("Product ID missing. Cannot update try-on settings.")
+            return
+
+        success = self.product_service.update_tryon_settings(product_id, settings)
+
+        if success:
+            print("Try-on settings updated:", product.get("name"))
+            self.go_to_tryon_settings()
+        else:
+            print("Try-on settings update failed:", product.get("name"))
 
     def logout_admin(self):
         self.current_admin = None
@@ -380,7 +475,27 @@ class SmartMirrorApp(QMainWindow):
         else:
             self.stack.setCurrentWidget(self.department_screen)
 
+    def go_to_deleted_products(self):
+        products = self.product_service.get_deleted_products()
+        self.deleted_products_screen.set_products(products)
+        self.stack.setCurrentWidget(self.deleted_products_screen)
 
+
+    def restore_deleted_product(self, product):
+        product_id = product.get("id")
+
+        if not product_id:
+            print("Product ID missing. Cannot restore.")
+            return
+
+        success = self.product_service.restore_product(product_id)
+
+        if success:
+            print("Restored product:", product.get("name"))
+            self.go_to_deleted_products()
+            self.update_admin_dashboard_summary()
+        else:
+            print("Restore failed:", product.get("name"))    
 
 
 if __name__ == "__main__":
