@@ -1,13 +1,13 @@
 import sys
 from admin_ui.tryon_settings_screen import TryOnSettingsScreen
 from PySide6.QtWidgets import QApplication, QMainWindow, QStackedWidget
-from admin_ui.discount_management_screen import DiscountManagementScreen
+from admin_ui.discounts.discount_management_screen import DiscountManagementScreen
 from paths import ensure_directories
 from database.schema import create_database_schema
 from services.inventory_service import InventoryService
 from services.product_service import ProductCatalog
 from services.auth_service import AuthService
-from admin_ui.inventory_management_screen import InventoryManagementScreen
+from admin_ui.inventory.inventory_management_screen import InventoryManagementScreen
 from ui.welcome_screen import WelcomeScreen
 from ui.department_screen import DepartmentScreen
 from ui.category_screen import CategoryScreen
@@ -16,15 +16,15 @@ from ui.product_detail_screen import ProductDetailScreen
 from ui.camera_warning_screen import CameraWarningScreen
 from ui.map_screen import MapScreen
 from ui.tryon_screen import TryOnScreen
-from admin_ui.product_form_screen import ProductFormScreen
+from admin_ui.products.product_form_screen import ProductFormScreen
 from services.product_service import ProductService
 from services.image_service import ImageService
-from admin_ui.product_management_screen import ProductManagementScreen
+from admin_ui.products.product_management_screen import ProductManagementScreen
 from PySide6.QtWidgets import QMessageBox
-from admin_ui.admin_login_screen import AdminLoginScreen
-from admin_ui.admin_dashboard_screen import AdminDashboardScreen
-from admin_ui.location_management_screen import LocationManagementScreen
-from admin_ui.deleted_products_screen import DeletedProductsScreen
+from admin_ui.auth.admin_login_screen import AdminLoginScreen
+from admin_ui.dashboard.admin_dashboard_screen import AdminDashboardScreen
+from admin_ui.locations.location_management_screen import LocationManagementScreen
+from admin_ui.products.deleted_products_screen import DeletedProductsScreen
 
 class SmartMirrorApp(QMainWindow):
     def __init__(self):
