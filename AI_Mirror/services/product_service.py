@@ -198,3 +198,6 @@ class ProductService:
     
     def get_deleted_products(self):
         return self.repository.get_deleted_products()
+    
+    def get_product_for_tryon(self, product_id: int):
+        return self.repository.get_product_by_id(product_id)

@@ -1,5 +1,5 @@
 import sys
-from admin_ui.tryon_settings_screen import TryOnSettingsScreen
+from admin_ui.tryon.tryon_settings_screen import TryOnSettingsScreen
 from PySide6.QtWidgets import QApplication, QMainWindow, QStackedWidget
 from admin_ui.discounts.discount_management_screen import DiscountManagementScreen
 from paths import ensure_directories
@@ -400,6 +400,14 @@ class SmartMirrorApp(QMainWindow):
         self.go_to_manage_products()
 
     def start_virtual_try_on(self, product):
+        product_id = product.get("id")
+
+        if product_id:
+            full_product = self.product_service.get_product_for_tryon(product_id)
+
+            if full_product:
+                product = self.prepare_product_for_tryon(full_product)
+
         self.selected_product = product
         self.tryon_screen.start_camera(product)
         self.stack.setCurrentWidget(self.tryon_screen)
@@ -496,6 +504,36 @@ class SmartMirrorApp(QMainWindow):
             self.update_admin_dashboard_summary()
         else:
             print("Restore failed:", product.get("name"))    
+
+    def prepare_product_for_tryon(self, product):
+        tryon_settings = product.get("tryon_settings") or {}
+
+        product["fit"] = {
+            "width_scale": tryon_settings.get(
+                "width_scale",
+                product.get("width_scale", 1.0)
+            ),
+            "height_scale": tryon_settings.get(
+                "height_scale",
+                product.get("height_scale", 1.0)
+            ),
+            "vertical_offset": tryon_settings.get(
+                "vertical_offset",
+                product.get("vertical_offset", 0.0)
+            ),
+            "horizontal_offset": tryon_settings.get(
+                "horizontal_offset",
+                product.get("horizontal_offset", 0)
+            ),
+        }
+
+        product["image"] = (
+            product.get("image_path")
+            or product.get("image")
+            or ""
+        )
+
+        return product
 
 
 if __name__ == "__main__":
