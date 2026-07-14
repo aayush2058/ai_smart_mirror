@@ -1,10 +1,64 @@
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel,
     QPushButton, QScrollArea, QFrame, QLineEdit,
-    QDialog, QSlider, QMessageBox
+    QDialog, QSlider, QMessageBox, QComboBox
 )
 from PySide6.QtCore import Qt
+from PySide6.QtGui import QPixmap
+from paths import resolve_project_path
 
+FIT_PRESETS = {
+    "Custom": None,
+
+    "Regular Shirt": {
+        "width_scale": 2.0,
+        "height_scale": 1.30,
+        "vertical_offset": 0.16,
+        "horizontal_offset": 0,
+    },
+
+    "Slim Shirt": {
+        "width_scale": 1.80,
+        "height_scale": 1.35,
+        "vertical_offset": 0.15,
+        "horizontal_offset": 0,
+    },
+
+    "Oversized Shirt": {
+        "width_scale": 2.40,
+        "height_scale": 1.45,
+        "vertical_offset": 0.18,
+        "horizontal_offset": 0,
+    },
+
+    "Regular Pants": {
+        "width_scale": 3.80,
+        "height_scale": 1.35,
+        "vertical_offset": 0.20,
+        "horizontal_offset": 0,
+    },
+
+    "Slim Jeans": {
+        "width_scale": 3.40,
+        "height_scale": 1.45,
+        "vertical_offset": 0.20,
+        "horizontal_offset": 0,
+    },
+
+    "Loose Pants": {
+        "width_scale": 4.30,
+        "height_scale": 1.40,
+        "vertical_offset": 0.22,
+        "horizontal_offset": 0,
+    },
+
+    "Shorts": {
+        "width_scale": 3.80,
+        "height_scale": 1.00,
+        "vertical_offset": 0.34,
+        "horizontal_offset": 0,
+    },
+}
 
 class TryOnSettingsScreen(QWidget):
     def __init__(self, on_back, on_update_tryon):
@@ -239,6 +293,21 @@ class TryOnSettingsDialog(QDialog):
 
         settings = product.get("tryon_settings") or {}
 
+        self.image_preview = QLabel("No Product Image")
+        self.image_preview.setFixedSize(220, 280)
+        self.image_preview.setAlignment(Qt.AlignCenter)
+        self.image_preview.setStyleSheet("""
+            QLabel {
+                background-color: #1c2530;
+                color: #cccccc;
+                border: 1px solid #34495e;
+                border-radius: 14px;
+                font-size: 16px;
+            }
+        """)
+
+        self.load_product_image()
+
         self.width_value = float(settings.get("width_scale", product.get("width_scale", 1.0)) or 1.0)
         self.height_value = float(settings.get("height_scale", product.get("height_scale", 1.0)) or 1.0)
         self.vertical_value = float(settings.get("vertical_offset", product.get("vertical_offset", 0.0)) or 0.0)
@@ -257,6 +326,52 @@ class TryOnSettingsDialog(QDialog):
                 color: white;
             }
         """)
+
+        preset_row = QHBoxLayout()
+        preset_row.setSpacing(12)
+
+        preset_label = QLabel("Fit Preset")
+        preset_label.setStyleSheet("""
+            QLabel {
+                font-size: 17px;
+                color: white;
+                background-color: transparent;
+                border: none;
+            }
+        """)
+
+        self.preset_combo = QComboBox()
+        self.preset_combo.addItems(FIT_PRESETS.keys())
+        self.preset_combo.setFixedHeight(48)
+        self.preset_combo.setStyleSheet("""
+            QComboBox {
+                font-size: 17px;
+                color: white;
+                background-color: #1c2530;
+                border: 1px solid #34495e;
+                border-radius: 10px;
+                padding-left: 12px;
+            }
+
+            QComboBox QAbstractItemView {
+                background-color: #1c2530;
+                color: white;
+                selection-background-color: #2d89ef;
+            }
+        """)
+
+        self.apply_preset_button = QPushButton("Apply Preset")
+        self.apply_preset_button.setFixedSize(150, 48)
+        self.apply_preset_button.setStyleSheet(
+            self.blue_button_style()
+        )
+        self.apply_preset_button.clicked.connect(
+            self.apply_selected_preset
+        )
+
+        preset_row.addWidget(preset_label)
+        preset_row.addWidget(self.preset_combo)
+        preset_row.addWidget(self.apply_preset_button)
 
         self.width_label, self.width_slider = self.create_slider(
             "Width Scale",
@@ -291,6 +406,8 @@ class TryOnSettingsDialog(QDialog):
         self.vertical_slider.valueChanged.connect(self.update_labels)
         self.horizontal_slider.valueChanged.connect(self.update_labels)
 
+
+
         button_row = QHBoxLayout()
 
         cancel_button = QPushButton("Cancel")
@@ -298,24 +415,48 @@ class TryOnSettingsDialog(QDialog):
         cancel_button.setStyleSheet(self.grey_button_style())
         cancel_button.clicked.connect(self.reject)
 
+        reset_button = QPushButton("Reset Default")
+        reset_button.setFixedSize(160, 50)
+        reset_button.setStyleSheet(self.grey_button_style())
+        reset_button.clicked.connect(self.reset_to_default)
+
         save_button = QPushButton("Save Fit")
         save_button.setFixedSize(170, 50)
         save_button.setStyleSheet(self.green_button_style())
         save_button.clicked.connect(self.handle_save)
 
+        button_row.addWidget(reset_button)
         button_row.addStretch()
         button_row.addWidget(cancel_button)
         button_row.addWidget(save_button)
+        
+        controls_layout = QVBoxLayout()
+        controls_layout.setSpacing(16)
+
+        controls_layout.addLayout(preset_row)
+        controls_layout.addWidget(self.width_label)
+        controls_layout.addWidget(self.width_slider)
+        controls_layout.addWidget(self.height_label)
+        controls_layout.addWidget(self.height_slider)
+        controls_layout.addWidget(self.vertical_label)
+        controls_layout.addWidget(self.vertical_slider)
+        controls_layout.addWidget(self.horizontal_label)
+        controls_layout.addWidget(self.horizontal_slider)
+        controls_layout.addStretch()
+
+        
+
+        calibration_row = QHBoxLayout()
+        calibration_row.setSpacing(30)
+
+        calibration_row.addWidget(
+            self.image_preview,
+            alignment=Qt.AlignTop
+        )
+        calibration_row.addLayout(controls_layout)
 
         main_layout.addWidget(title)
-        main_layout.addWidget(self.width_label)
-        main_layout.addWidget(self.width_slider)
-        main_layout.addWidget(self.height_label)
-        main_layout.addWidget(self.height_slider)
-        main_layout.addWidget(self.vertical_label)
-        main_layout.addWidget(self.vertical_slider)
-        main_layout.addWidget(self.horizontal_label)
-        main_layout.addWidget(self.horizontal_slider)
+        main_layout.addLayout(calibration_row)
         main_layout.addLayout(button_row)
 
         self.setLayout(main_layout)
@@ -400,3 +541,82 @@ class TryOnSettingsDialog(QDialog):
                 background-color: #666666;
             }
         """
+    
+    def apply_selected_preset(self):
+        preset_name = self.preset_combo.currentText()
+        preset = FIT_PRESETS.get(preset_name)
+
+        if not preset:
+            return
+
+        self.width_slider.setValue(
+            int(preset["width_scale"] * 100)
+        )
+
+        self.height_slider.setValue(
+            int(preset["height_scale"] * 100)
+        )
+
+        self.vertical_slider.setValue(
+            int(preset["vertical_offset"] * 100)
+        )
+
+        self.horizontal_slider.setValue(
+            int(preset["horizontal_offset"])
+        )
+
+        self.update_labels()
+
+
+    def reset_to_default(self):
+        self.preset_combo.setCurrentText("Custom")
+
+        self.width_slider.setValue(100)
+        self.height_slider.setValue(100)
+        self.vertical_slider.setValue(0)
+        self.horizontal_slider.setValue(0)
+
+        self.update_labels()
+
+    def blue_button_style(self):
+        return """
+            QPushButton {
+                font-size: 16px;
+                font-weight: bold;
+                background-color: #2d89ef;
+                color: white;
+                border-radius: 10px;
+            }
+
+            QPushButton:hover {
+                background-color: #1b5fbd;
+            }
+        """
+    
+    def load_product_image(self):
+        image_path = (
+            self.product.get("image_path")
+            or self.product.get("image")
+            or ""
+        )
+
+        full_path = resolve_project_path(image_path)
+
+        if not full_path or not full_path.exists():
+            self.image_preview.setText("Image Not Found")
+            return
+
+        pixmap = QPixmap(str(full_path))
+
+        if pixmap.isNull():
+            self.image_preview.setText("Image Error")
+            return
+
+        self.image_preview.setPixmap(
+            pixmap.scaled(
+                200,
+                260,
+                Qt.KeepAspectRatio,
+                Qt.SmoothTransformation
+            )
+        )
