@@ -140,8 +140,12 @@ class ProductRepository:
             connection.execute(
                 """
                 UPDATE products
+<<<<<<< HEAD
                 SET tryon_enabled = 1,
                     updated_at = CURRENT_TIMESTAMP
+=======
+                SET updated_at = CURRENT_TIMESTAMP
+>>>>>>> c40243b (Old versions to a archive repo. Only active files here)
                 WHERE id = ?
                 """,
                 (product_id,)
@@ -286,4 +290,8 @@ class ProductRepository:
                 """
             ).fetchall()
 
+<<<<<<< HEAD
             return [dict(row) for row in rows]
+=======
+            return [dict(row) for row in rows]
+>>>>>>> c40243b (Old versions to a archive repo. Only active files here)

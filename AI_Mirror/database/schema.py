@@ -54,4 +54,29 @@ def create_database_schema():
                     REFERENCES products(id)
                     ON DELETE CASCADE
             );
+<<<<<<< HEAD
         """)
+=======
+
+            CREATE TABLE IF NOT EXISTS admin_undo_actions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                description TEXT NOT NULL,
+                payload TEXT NOT NULL,
+                undone INTEGER NOT NULL DEFAULT 0,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                undone_at TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS analytics_events (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                session_id TEXT NOT NULL,
+                event_type TEXT NOT NULL,
+                product_id INTEGER,
+                metadata TEXT,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_analytics_event_type ON analytics_events(event_type);
+            CREATE INDEX IF NOT EXISTS idx_analytics_product ON analytics_events(product_id);
+        """)
+>>>>>>> c40243b (Old versions to a archive repo. Only active files here)

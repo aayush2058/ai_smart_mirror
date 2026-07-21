@@ -61,13 +61,21 @@ FIT_PRESETS = {
 }
 
 class TryOnSettingsScreen(QWidget):
+<<<<<<< HEAD
     def __init__(self, on_back, on_update_tryon, on_preview_tryon):
+=======
+    def __init__(self, on_back, on_update_tryon, on_preview_tryon, on_toggle_tryon):
+>>>>>>> c40243b (Old versions to a archive repo. Only active files here)
         super().__init__()
 
         self.on_back = on_back
         self.on_update_tryon = on_update_tryon
         self.products = []
         self.on_preview_tryon = on_preview_tryon
+<<<<<<< HEAD
+=======
+        self.on_toggle_tryon = on_toggle_tryon
+>>>>>>> c40243b (Old versions to a archive repo. Only active files here)
 
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(45, 35, 45, 35)
@@ -259,14 +267,46 @@ class TryOnSettingsScreen(QWidget):
             lambda checked=False, p=product: self.open_settings_dialog(p)
         )
 
+<<<<<<< HEAD
         layout.addWidget(info)
         layout.addWidget(values)
         layout.addStretch()
+=======
+        enabled = bool(product.get("tryon_enabled"))
+        toggle_button = QPushButton("Enabled" if enabled else "Disabled")
+        toggle_button.setFixedSize(130, 45)
+        toggle_button.setStyleSheet(self.toggle_button_style(enabled))
+        toggle_button.clicked.connect(
+            lambda checked=False, p=product, value=not enabled: self.on_toggle_tryon(p, value)
+        )
+
+        layout.addWidget(info)
+        layout.addWidget(values)
+        layout.addStretch()
+        layout.addWidget(toggle_button)
+>>>>>>> c40243b (Old versions to a archive repo. Only active files here)
         layout.addWidget(edit_button)
 
         row.setLayout(layout)
         return row
 
+<<<<<<< HEAD
+=======
+    def toggle_button_style(self, enabled):
+        colour = "#00a86b" if enabled else "#8b2d2d"
+        hover = "#007a4d" if enabled else "#b13b3b"
+        return f"""
+            QPushButton {{
+                font-size: 16px;
+                font-weight: bold;
+                background-color: {colour};
+                color: white;
+                border-radius: 10px;
+            }}
+            QPushButton:hover {{ background-color: {hover}; }}
+        """
+
+>>>>>>> c40243b (Old versions to a archive repo. Only active files here)
     def open_settings_dialog(self, product):
         print("Opening Try-On Settings dialog for:", product.get("name"))
 

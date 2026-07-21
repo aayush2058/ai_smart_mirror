@@ -2,7 +2,11 @@ from pathlib import Path
 
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel,
+<<<<<<< HEAD
     QPushButton, QFrame
+=======
+    QPushButton, QFrame, QComboBox
+>>>>>>> c40243b (Old versions to a archive repo. Only active files here)
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap
@@ -11,12 +15,21 @@ from ui.common_widgets import create_map_button
 
 
 class ProductDetailScreen(QWidget):
+<<<<<<< HEAD
     def __init__(self, on_back, on_try_on, on_map):
+=======
+    def __init__(self, on_back, on_try_on, on_map, on_add_to_basket, on_view_basket):
+>>>>>>> c40243b (Old versions to a archive repo. Only active files here)
         super().__init__()
 
         self.on_back = on_back
         self.on_try_on = on_try_on
         self.on_map = on_map
+<<<<<<< HEAD
+=======
+        self.on_add_to_basket = on_add_to_basket
+        self.on_view_basket = on_view_basket
+>>>>>>> c40243b (Old versions to a archive repo. Only active files here)
         self.product = None
 
         self.main_layout = QVBoxLayout()
@@ -55,8 +68,19 @@ class ProductDetailScreen(QWidget):
         """)
         self.top_try_button.clicked.connect(self.handle_try_on)
 
+<<<<<<< HEAD
         top_bar.addWidget(self.title)
         top_bar.addStretch()
+=======
+        basket_button = QPushButton("View Basket")
+        basket_button.setFixedSize(190, 55)
+        basket_button.setStyleSheet(self.top_try_button.styleSheet())
+        basket_button.clicked.connect(self.on_view_basket)
+
+        top_bar.addWidget(self.title)
+        top_bar.addStretch()
+        top_bar.addWidget(basket_button)
+>>>>>>> c40243b (Old versions to a archive repo. Only active files here)
         top_bar.addWidget(self.top_try_button)
 
         # -------------------------
@@ -100,6 +124,22 @@ class ProductDetailScreen(QWidget):
         self.discount_label = QLabel("")
         self.recommendation_title = QLabel("Complete Your Outfit")
         self.recommendation_label = QLabel("")
+<<<<<<< HEAD
+=======
+        self.size_selector = QComboBox()
+        self.size_selector.setFixedHeight(48)
+        self.size_selector.setStyleSheet(
+            "font-size: 18px; color: white; background: #293746; "
+            "border: 1px solid #496176; border-radius: 10px; padding: 8px;"
+        )
+        self.add_basket_button = QPushButton("Add Selected Size to Basket")
+        self.add_basket_button.setFixedHeight(52)
+        self.add_basket_button.setStyleSheet(
+            "font-size: 18px; font-weight: bold; color: white; "
+            "background: #2d89ef; border-radius: 11px;"
+        )
+        self.add_basket_button.clicked.connect(self.handle_add_to_basket)
+>>>>>>> c40243b (Old versions to a archive repo. Only active files here)
 
         self.name_label.setWordWrap(True)
         self.location_label.setWordWrap(True)
@@ -177,6 +217,11 @@ class ProductDetailScreen(QWidget):
         info_layout.addWidget(self.available_label)
         info_layout.addWidget(self.location_label)
         info_layout.addWidget(self.discount_label)
+<<<<<<< HEAD
+=======
+        info_layout.addWidget(self.size_selector)
+        info_layout.addWidget(self.add_basket_button)
+>>>>>>> c40243b (Old versions to a archive repo. Only active files here)
         info_layout.addWidget(self.recommendation_title)
         info_layout.addWidget(self.recommendation_label)
         info_layout.addStretch()
@@ -243,6 +288,17 @@ class ProductDetailScreen(QWidget):
             sizes_text = str(sizes)
 
         self.size_label.setText(f"Sizes: {sizes_text}")
+<<<<<<< HEAD
+=======
+        self.size_selector.clear()
+        self.size_selector.addItems(sizes if isinstance(sizes, list) else [])
+        can_add = bool(sizes) and bool(self.product.get("available"))
+        self.size_selector.setEnabled(can_add)
+        self.add_basket_button.setEnabled(can_add)
+        self.add_basket_button.setText(
+            "Add Selected Size to Basket" if can_add else "Currently Unavailable"
+        )
+>>>>>>> c40243b (Old versions to a archive repo. Only active files here)
 
         if self.product.get("available", False):
             self.available_label.setText("Availability: In stock")
@@ -262,6 +318,13 @@ class ProductDetailScreen(QWidget):
             self.get_basic_recommendations(self.product)
         )
 
+<<<<<<< HEAD
+=======
+        self.top_try_button.setVisible(
+            bool(self.product.get("tryon_enabled", False))
+        )
+
+>>>>>>> c40243b (Old versions to a archive repo. Only active files here)
         self.load_product_image()
 
     def load_product_image(self):
@@ -306,5 +369,14 @@ class ProductDetailScreen(QWidget):
         return "Recommended matching items will appear here."
 
     def handle_try_on(self):
+<<<<<<< HEAD
         if self.product:
             self.on_try_on(self.product)
+=======
+        if self.product and self.product.get("tryon_enabled", False):
+            self.on_try_on(self.product)
+
+    def handle_add_to_basket(self):
+        if self.product and self.size_selector.currentText():
+            self.on_add_to_basket(self.product, self.size_selector.currentText())
+>>>>>>> c40243b (Old versions to a archive repo. Only active files here)

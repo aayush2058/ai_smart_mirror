@@ -4,6 +4,10 @@ import json
 import os
 from pathlib import Path
 from fit_engine import FitEngine
+<<<<<<< HEAD
+=======
+from services.tryon_catalogue_service import TryOnCatalogueService
+>>>>>>> c40243b (Old versions to a archive repo. Only active files here)
 
 
 class ClothingOverlay:
@@ -13,9 +17,18 @@ class ClothingOverlay:
         self.engine_root = Path(__file__).resolve().parent
         self.project_root = self.engine_root.parent
         self.catalogue_path = str(self.project_root / catalogue_path)
+<<<<<<< HEAD
 
         self.catalogue = self._load_catalogue()
         self.path = [item["image"] for item in self.catalogue]
+=======
+        self.catalogue_service = TryOnCatalogueService(
+            fallback_path=self.catalogue_path
+        )
+
+        self.catalogue = self._load_catalogue()
+        self.path = [item.get("image", "") for item in self.catalogue]
+>>>>>>> c40243b (Old versions to a archive repo. Only active files here)
         
 
         # Outfit state
@@ -80,6 +93,7 @@ class ClothingOverlay:
     # LOAD CATALOGUE
     # ============================================================
     def _load_catalogue(self):
+<<<<<<< HEAD
 
         if not os.path.exists(self.catalogue_path):
             print("❌ catalogue.json not found:", self.catalogue_path)
@@ -99,6 +113,16 @@ class ClothingOverlay:
         except Exception as e:
             print("❌ Error loading catalogue:", e)
             return []
+=======
+        catalogue = self.catalogue_service.load_products()
+
+        if not catalogue:
+            print("No valid try-on products were found.")
+            return []
+
+        print("Try-on catalogue source:", self.catalogue_service.source)
+        return catalogue
+>>>>>>> c40243b (Old versions to a archive repo. Only active files here)
 
     # ============================================================
     # CONFIG LOAD / SAVE
@@ -205,6 +229,7 @@ class ClothingOverlay:
 
         self.catalogue[product_index]["fit"] = fit_data
 
+<<<<<<< HEAD
         try:
             with open(self.catalogue_path, "w", encoding="utf-8") as file:
                 json.dump(self.catalogue, file, indent=4)
@@ -215,6 +240,16 @@ class ClothingOverlay:
 
         except Exception as e:
             print("❌ Error saving product fit:", e)
+=======
+        product = self.catalogue[product_index]
+
+        if self.catalogue_service.update_fit(product, fit_data):
+            print("Product-specific fit saved to SQLite.")
+            print("Product:", product.get("name"))
+            print("Fit:", fit_data)
+        else:
+            print("Product fit could not be saved to SQLite.")
+>>>>>>> c40243b (Old versions to a archive repo. Only active files here)
 
     # ============================================================
     # GROUP / IMAGE HELPERS

@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 venv/
 __pycache__/
 *.pyc
@@ -6,3 +7,45 @@ __pycache__/
 .vscode/
 .idea/
 *.log
+=======
+cat > .gitignore <<'EOF'
+# Python virtual environments
+venv/
+.venv/
+env/
+ENV/
+**/venv/
+**/.venv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Package/build files
+build/
+dist/
+*.egg-info/
+
+# IDE settings
+.vscode/
+.idea/
+
+# Operating-system files
+.DS_Store
+Thumbs.db
+
+# Test and tool caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Logs
+*.log
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+EOF
+>>>>>>> c40243b (Old versions to a archive repo. Only active files here)

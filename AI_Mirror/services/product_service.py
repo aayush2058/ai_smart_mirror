@@ -53,11 +53,28 @@ class ProductCatalog:
         converted = []
 
         for product in products:
+<<<<<<< HEAD
             converted.append({
                 "id": product.get("id"),
                 "name": product.get("name"),
                 "department": product.get("department"),
                 "category": product.get("category"),
+=======
+            full_product = self.repository.get_product_by_id(product.get("id")) or product
+            sizes = [
+                item.get("size")
+                for item in full_product.get("sizes", [])
+                if item.get("size") and item.get("quantity", 0) > 0
+            ]
+            price_value = float(product.get("price", 0))
+            converted.append({
+                "id": product.get("id"),
+                "product_code": product.get("product_code"),
+                "name": product.get("name"),
+                "department": product.get("department"),
+                "category": product.get("category"),
+                "price_value": price_value,
+>>>>>>> c40243b (Old versions to a archive repo. Only active files here)
                 "price": f"£{product.get('price')}",
                 "colour": product.get("colour"),
                 "description": product.get("description"),
@@ -67,7 +84,13 @@ class ProductCatalog:
                 "discount": bool(product.get("discount")),
                 "discount_price": product.get("discount_price"),
                 "location": product.get("location"),
+<<<<<<< HEAD
                 "tryon_category": product.get("tryon_category"),
+=======
+                "tryon_enabled": bool(product.get("tryon_enabled")),
+                "tryon_category": product.get("tryon_category"),
+                "sizes": sizes,
+>>>>>>> c40243b (Old versions to a archive repo. Only active files here)
             })
 
         return converted
@@ -200,4 +223,8 @@ class ProductService:
         return self.repository.get_deleted_products()
     
     def get_product_for_tryon(self, product_id: int):
+<<<<<<< HEAD
         return self.repository.get_product_by_id(product_id)
+=======
+        return self.repository.get_product_by_id(product_id)
+>>>>>>> c40243b (Old versions to a archive repo. Only active files here)
