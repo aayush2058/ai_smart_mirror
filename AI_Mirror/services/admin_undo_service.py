@@ -12,6 +12,8 @@ class AdminUndoService:
         "category",
         "tryon_category",
         "tryon_enabled",
+        "available",
+        "discount", "discount_price", "discount_type", "discount_value",
     )
 
     def create_database_backup(self):
@@ -47,6 +49,8 @@ class AdminUndoService:
                     field: value for field, value in changes.items()
                     if field in self.TRACKED_FIELDS
                 }
+                if not allowed:
+                    continue
                 assignments = ", ".join(f"{field} = ?" for field in allowed)
                 values = list(allowed.values()) + [product_id]
                 connection.execute(
@@ -100,15 +104,13 @@ class AdminUndoService:
 
             for item in payload:
                 values = item["values"]
+                allowed = {field: value for field, value in values.items() if field in self.TRACKED_FIELDS}
+                if not allowed:
+                    continue
+                assignments = ", ".join(f"{field} = ?" for field in allowed)
                 connection.execute(
-                    "UPDATE products SET image_path = ?, category = ?, "
-                    "tryon_category = ?, tryon_enabled = ?, "
-                    "updated_at = CURRENT_TIMESTAMP WHERE id = ?",
-                    (
-                        values["image_path"], values["category"],
-                        values["tryon_category"], values["tryon_enabled"],
-                        item["id"],
-                    ),
+                    f"UPDATE products SET {assignments}, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+                    list(allowed.values()) + [item["id"]],
                 )
 
             connection.execute(

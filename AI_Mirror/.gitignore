@@ -1,0 +1,3 @@
+# Runtime health files are rewritten while the mirror application is running.
+logs/runtime_heartbeat.json
+

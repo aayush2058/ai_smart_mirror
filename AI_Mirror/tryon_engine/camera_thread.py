@@ -16,8 +16,6 @@ class ThreadedCamera:
         return cv2.VideoCapture(camera_index)
 
     def __init__(self, camera_index=0, width=960, height=540, fps=30):
-<<<<<<< HEAD
-=======
         self.camera_index = camera_index
         self.width = width
         self.height = height
@@ -26,7 +24,6 @@ class ThreadedCamera:
         self.frames_received = 0
         self.failed_reads = 0
         self.reconnect_count = 0
->>>>>>> c40243b (Old versions to a archive repo. Only active files here)
 
         self.cap = self._open_camera(camera_index)
 
@@ -58,11 +55,6 @@ class ThreadedCamera:
 
                 with self.lock:
                     self.frame = frame
-<<<<<<< HEAD
-
-            time.sleep(0.001)
-
-=======
                     self.last_frame_at = time.monotonic()
                     self.frames_received += 1
                     self.failed_reads = 0
@@ -97,7 +89,6 @@ class ThreadedCamera:
             "reconnect_count": self.reconnect_count,
         }
 
->>>>>>> c40243b (Old versions to a archive repo. Only active files here)
     def read(self):
 
         with self.lock:
@@ -110,14 +101,9 @@ class ThreadedCamera:
 
         self.running = False
 
-<<<<<<< HEAD
-        if self.cap is not None:
-            self.cap.release()
-=======
         if getattr(self, "thread", None) is not None and self.thread.is_alive():
             self.thread.join(timeout=2)
 
         if self.cap is not None:
             self.cap.release()
             self.cap = None
->>>>>>> c40243b (Old versions to a archive repo. Only active files here)

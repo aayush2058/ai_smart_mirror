@@ -2,11 +2,7 @@ from pathlib import Path
 
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel,
-<<<<<<< HEAD
-    QPushButton, QFrame
-=======
     QPushButton, QFrame, QComboBox
->>>>>>> c40243b (Old versions to a archive repo. Only active files here)
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap
@@ -15,21 +11,14 @@ from ui.common_widgets import create_map_button
 
 
 class ProductDetailScreen(QWidget):
-<<<<<<< HEAD
-    def __init__(self, on_back, on_try_on, on_map):
-=======
     def __init__(self, on_back, on_try_on, on_map, on_add_to_basket, on_view_basket):
->>>>>>> c40243b (Old versions to a archive repo. Only active files here)
         super().__init__()
 
         self.on_back = on_back
         self.on_try_on = on_try_on
         self.on_map = on_map
-<<<<<<< HEAD
-=======
         self.on_add_to_basket = on_add_to_basket
         self.on_view_basket = on_view_basket
->>>>>>> c40243b (Old versions to a archive repo. Only active files here)
         self.product = None
 
         self.main_layout = QVBoxLayout()
@@ -68,10 +57,6 @@ class ProductDetailScreen(QWidget):
         """)
         self.top_try_button.clicked.connect(self.handle_try_on)
 
-<<<<<<< HEAD
-        top_bar.addWidget(self.title)
-        top_bar.addStretch()
-=======
         basket_button = QPushButton("View Basket")
         basket_button.setFixedSize(190, 55)
         basket_button.setStyleSheet(self.top_try_button.styleSheet())
@@ -80,7 +65,6 @@ class ProductDetailScreen(QWidget):
         top_bar.addWidget(self.title)
         top_bar.addStretch()
         top_bar.addWidget(basket_button)
->>>>>>> c40243b (Old versions to a archive repo. Only active files here)
         top_bar.addWidget(self.top_try_button)
 
         # -------------------------
@@ -124,8 +108,6 @@ class ProductDetailScreen(QWidget):
         self.discount_label = QLabel("")
         self.recommendation_title = QLabel("Complete Your Outfit")
         self.recommendation_label = QLabel("")
-<<<<<<< HEAD
-=======
         self.size_selector = QComboBox()
         self.size_selector.setFixedHeight(48)
         self.size_selector.setStyleSheet(
@@ -139,7 +121,6 @@ class ProductDetailScreen(QWidget):
             "background: #2d89ef; border-radius: 11px;"
         )
         self.add_basket_button.clicked.connect(self.handle_add_to_basket)
->>>>>>> c40243b (Old versions to a archive repo. Only active files here)
 
         self.name_label.setWordWrap(True)
         self.location_label.setWordWrap(True)
@@ -217,11 +198,8 @@ class ProductDetailScreen(QWidget):
         info_layout.addWidget(self.available_label)
         info_layout.addWidget(self.location_label)
         info_layout.addWidget(self.discount_label)
-<<<<<<< HEAD
-=======
         info_layout.addWidget(self.size_selector)
         info_layout.addWidget(self.add_basket_button)
->>>>>>> c40243b (Old versions to a archive repo. Only active files here)
         info_layout.addWidget(self.recommendation_title)
         info_layout.addWidget(self.recommendation_label)
         info_layout.addStretch()
@@ -278,7 +256,13 @@ class ProductDetailScreen(QWidget):
             return
 
         self.name_label.setText(self.product.get("name", "Unnamed Product"))
-        self.price_label.setText(str(self.product.get("price", "N/A")))
+        if self.product.get("discount"):
+            original = float(self.product.get("original_price", 0))
+            final = float(self.product.get("final_price", original))
+            self.price_label.setText(f'<span style="color:#9aa6b2; text-decoration:line-through;">£{original:.2f}</span>&nbsp;&nbsp;<span style="color:#00ff99;">£{final:.2f}</span>')
+            self.price_label.setTextFormat(Qt.RichText)
+        else:
+            self.price_label.setText(str(self.product.get("price", "N/A")))
         self.colour_label.setText(f"Colour: {self.product.get('colour', 'N/A')}")
 
         sizes = self.product.get("sizes", [])
@@ -288,8 +272,6 @@ class ProductDetailScreen(QWidget):
             sizes_text = str(sizes)
 
         self.size_label.setText(f"Sizes: {sizes_text}")
-<<<<<<< HEAD
-=======
         self.size_selector.clear()
         self.size_selector.addItems(sizes if isinstance(sizes, list) else [])
         can_add = bool(sizes) and bool(self.product.get("available"))
@@ -298,7 +280,6 @@ class ProductDetailScreen(QWidget):
         self.add_basket_button.setText(
             "Add Selected Size to Basket" if can_add else "Currently Unavailable"
         )
->>>>>>> c40243b (Old versions to a archive repo. Only active files here)
 
         if self.product.get("available", False):
             self.available_label.setText("Availability: In stock")
@@ -310,7 +291,7 @@ class ProductDetailScreen(QWidget):
         )
 
         if self.product.get("discount"):
-            self.discount_label.setText("Discount available on this product")
+            self.discount_label.setText(f"{self.product.get('discount_text', 'DISCOUNT')}  |  You save £{float(self.product.get('saving_amount', 0)):.2f}")
         else:
             self.discount_label.setText("")
 
@@ -318,13 +299,10 @@ class ProductDetailScreen(QWidget):
             self.get_basic_recommendations(self.product)
         )
 
-<<<<<<< HEAD
-=======
         self.top_try_button.setVisible(
             bool(self.product.get("tryon_enabled", False))
         )
 
->>>>>>> c40243b (Old versions to a archive repo. Only active files here)
         self.load_product_image()
 
     def load_product_image(self):
@@ -369,14 +347,9 @@ class ProductDetailScreen(QWidget):
         return "Recommended matching items will appear here."
 
     def handle_try_on(self):
-<<<<<<< HEAD
-        if self.product:
-            self.on_try_on(self.product)
-=======
         if self.product and self.product.get("tryon_enabled", False):
             self.on_try_on(self.product)
 
     def handle_add_to_basket(self):
         if self.product and self.size_selector.currentText():
             self.on_add_to_basket(self.product, self.size_selector.currentText())
->>>>>>> c40243b (Old versions to a archive repo. Only active files here)

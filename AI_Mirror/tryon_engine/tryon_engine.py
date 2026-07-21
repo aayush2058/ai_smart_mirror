@@ -36,11 +36,7 @@ class TryOnEngine:
 
         self.selected_product = selected_product
 
-<<<<<<< HEAD
-        from camera import start_camera, get_frame, release
-=======
         from camera import start_camera, get_frame, release, get_status
->>>>>>> c40243b (Old versions to a archive repo. Only active files here)
         from bodytracking import BodyTracker
         from clothing_overlay import ClothingOverlay
         from segmentation import PersonSegmenter
@@ -48,12 +44,8 @@ class TryOnEngine:
         self.camera_module = {
             "start_camera": start_camera,
             "get_frame": get_frame,
-<<<<<<< HEAD
-            "release": release
-=======
             "release": release,
             "get_status": get_status,
->>>>>>> c40243b (Old versions to a archive repo. Only active files here)
         }
 
         self.body = BodyTracker()
@@ -109,14 +101,11 @@ class TryOnEngine:
 
         return frame
 
-<<<<<<< HEAD
-=======
     def camera_status(self):
         if self.camera_module is None:
             return {"state": "idle"}
         return self.camera_module["get_status"]()
 
->>>>>>> c40243b (Old versions to a archive repo. Only active files here)
     def stop(self):
         """
         Stops camera safely.

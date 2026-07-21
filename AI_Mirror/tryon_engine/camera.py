@@ -18,11 +18,7 @@ def start_camera():
     global pose, camera, frame_count, last_landmarks
 
     if camera is not None:
-<<<<<<< HEAD
-        return
-=======
         return camera.running
->>>>>>> c40243b (Old versions to a archive repo. Only active files here)
 
     pose = mp_pose.Pose(
         model_complexity=0,
@@ -48,15 +44,12 @@ def start_camera():
     return True
 
 
-<<<<<<< HEAD
-=======
 def get_status():
     if camera is None:
         return {"state": "idle"}
     return camera.status()
 
 
->>>>>>> c40243b (Old versions to a archive repo. Only active files here)
 def get_frame():
     global frame_count, last_landmarks, camera, pose
 

@@ -1,13 +1,10 @@
 import sys
-<<<<<<< HEAD
-=======
 
 
 for stream in (sys.stdout, sys.stderr):
     if hasattr(stream, "reconfigure"):
         stream.reconfigure(errors="replace")
 
->>>>>>> c40243b (Old versions to a archive repo. Only active files here)
 from admin_ui.tryon.tryon_settings_screen import TryOnSettingsScreen
 from PySide6.QtWidgets import QApplication, QMainWindow, QStackedWidget
 from admin_ui.discounts.discount_management_screen import DiscountManagementScreen
@@ -28,16 +25,16 @@ from ui.tryon_screen import TryOnScreen
 from admin_ui.products.product_form_screen import ProductFormScreen
 from services.product_service import ProductService
 from services.image_service import ImageService
-<<<<<<< HEAD
-=======
 from services.admin_undo_service import AdminUndoService
 from services.health_service import HealthService
 from services.logging_service import configure_logging
 from services.runtime_heartbeat import RuntimeHeartbeat
 from services.basket_service import BasketService
 from ui.basket_screen import BasketScreen
+from admin_ui.analytics.event_tracker import EventTracker
+from admin_ui.analytics.metrics_service import MetricsService
+from admin_ui.analytics.analytics_dashboard_screen import AnalyticsDashboardScreen
 from admin_ui.diagnostics.system_diagnostics_screen import SystemDiagnosticsScreen
->>>>>>> c40243b (Old versions to a archive repo. Only active files here)
 from admin_ui.products.product_management_screen import ProductManagementScreen
 from PySide6.QtWidgets import QMessageBox
 from admin_ui.auth.admin_login_screen import AdminLoginScreen
@@ -61,14 +58,13 @@ class SmartMirrorApp(QMainWindow):
         self.auth_service = AuthService()
         self.product_service = ProductService()
         self.image_service = ImageService()
-<<<<<<< HEAD
-=======
         self.admin_undo_service = AdminUndoService()
         self.health_service = HealthService()
         self.logger = configure_logging()
         self.runtime_heartbeat = RuntimeHeartbeat(self)
         self.basket_service = BasketService()
->>>>>>> c40243b (Old versions to a archive repo. Only active files here)
+        self.event_tracker = EventTracker()
+        self.metrics_service = MetricsService()
         self.catalog = ProductCatalog()
         self.stack = QStackedWidget()
         self.setCentralWidget(self.stack)
@@ -110,9 +106,6 @@ class SmartMirrorApp(QMainWindow):
         self.product_detail_screen = ProductDetailScreen(
             on_back=self.go_back_to_catalogue,
             on_try_on=self.go_to_camera_warning_screen,
-<<<<<<< HEAD
-            on_map=self.go_to_map_screen
-=======
             on_map=self.go_to_map_screen,
             on_add_to_basket=self.add_product_to_basket,
             on_view_basket=self.go_to_basket,
@@ -122,7 +115,6 @@ class SmartMirrorApp(QMainWindow):
             basket_service=self.basket_service,
             on_back=self.go_back_from_basket,
             on_clear=self.basket_cleared,
->>>>>>> c40243b (Old versions to a archive repo. Only active files here)
         )
 
         self.product_management_screen = ProductManagementScreen(
@@ -168,11 +160,9 @@ class SmartMirrorApp(QMainWindow):
             on_discounts=self.go_to_discounts,
             on_locations=self.go_to_locations,
             on_tryon_settings=self.go_to_tryon_settings,
-<<<<<<< HEAD
-=======
             on_diagnostics=self.go_to_system_diagnostics,
+            on_analytics=self.go_to_retail_insights,
             on_undo=self.undo_last_admin_change,
->>>>>>> c40243b (Old versions to a archive repo. Only active files here)
             on_logout=self.logout_admin
         )
 
@@ -180,9 +170,6 @@ class SmartMirrorApp(QMainWindow):
         self.tryon_settings_screen = TryOnSettingsScreen(
             on_back=self.go_to_admin_dashboard,
             on_update_tryon=self.update_product_tryon_settings,
-<<<<<<< HEAD
-            on_preview_tryon=self.preview_admin_tryon_fit
-=======
             on_preview_tryon=self.preview_admin_tryon_fit,
             on_toggle_tryon=self.toggle_product_tryon,
         )
@@ -192,7 +179,11 @@ class SmartMirrorApp(QMainWindow):
             camera_status=self.tryon_screen.engine.camera_status,
             on_reset_camera=self.reset_camera_from_diagnostics,
             on_back=self.go_to_admin_dashboard,
->>>>>>> c40243b (Old versions to a archive repo. Only active files here)
+        )
+
+        self.analytics_dashboard_screen = AnalyticsDashboardScreen(
+            metrics_service=self.metrics_service,
+            on_back=self.go_to_admin_dashboard,
         )
 
         self.deleted_products_screen = DeletedProductsScreen(
@@ -206,10 +197,7 @@ class SmartMirrorApp(QMainWindow):
         self.stack.addWidget(self.category_screen)
         self.stack.addWidget(self.catalogue_screen)
         self.stack.addWidget(self.product_detail_screen)
-<<<<<<< HEAD
-=======
         self.stack.addWidget(self.basket_screen)
->>>>>>> c40243b (Old versions to a archive repo. Only active files here)
         self.stack.addWidget(self.camera_warning_screen)
         self.stack.addWidget(self.map_screen)
         self.stack.addWidget(self.tryon_screen)
@@ -222,19 +210,18 @@ class SmartMirrorApp(QMainWindow):
         self.stack.addWidget(self.location_management_screen)
         self.stack.addWidget(self.discount_management_screen)
         self.stack.addWidget(self.deleted_products_screen)
-<<<<<<< HEAD
-=======
         self.stack.addWidget(self.system_diagnostics_screen)
+        self.stack.addWidget(self.analytics_dashboard_screen)
 
         self.logger.info("Smart Mirror application initialized")
         self.runtime_heartbeat.start()
+        self.event_tracker.track("session_started")
 
     def closeEvent(self, event):
         self.runtime_heartbeat.stop()
         self.tryon_screen.stop_camera()
         self.logger.info("Smart Mirror application closed")
         super().closeEvent(event)
->>>>>>> c40243b (Old versions to a archive repo. Only active files here)
 
     def go_to_welcome_screen(self):
         self.stack.setCurrentWidget(self.welcome_screen)
@@ -358,19 +345,21 @@ class SmartMirrorApp(QMainWindow):
         else:
             print("Location update failed:", product.get("name"))
     
-    def update_product_discount(self, product, discount_enabled, discount_price):
+    def update_product_discount(self, product, discount_enabled, discount_type, discount_value, discount_price):
         product_id = product.get("id")
 
         if not product_id:
             print("Product ID missing. Cannot update discount.")
             return
 
-        success = self.product_service.update_product(
-            product_id,
-            {
+        success = self.admin_undo_service.apply_product_corrections(
+            f"Discount changed for {product.get('name', 'product')}",
+            {product_id: {
                 "discount": int(discount_enabled),
-                "discount_price": discount_price
-            }
+                "discount_price": discount_price,
+                "discount_type": discount_type,
+                "discount_value": discount_value,
+            }}
         )
 
         if success:
@@ -391,10 +380,12 @@ class SmartMirrorApp(QMainWindow):
         self.tryon_settings_screen.set_products(products)
         self.stack.setCurrentWidget(self.tryon_settings_screen)
 
-<<<<<<< HEAD
-=======
     def go_to_system_diagnostics(self):
         self.stack.setCurrentWidget(self.system_diagnostics_screen)
+
+    def go_to_retail_insights(self):
+        self.analytics_dashboard_screen.refresh()
+        self.stack.setCurrentWidget(self.analytics_dashboard_screen)
 
     def reset_camera_from_diagnostics(self):
         self.tryon_screen.stop_camera()
@@ -405,7 +396,6 @@ class SmartMirrorApp(QMainWindow):
             "The camera was released safely. It will start fresh at the next virtual try-on.",
         )
 
->>>>>>> c40243b (Old versions to a archive repo. Only active files here)
     def update_product_tryon_settings(self, product, settings):
         product_id = product.get("id")
 
@@ -421,8 +411,6 @@ class SmartMirrorApp(QMainWindow):
         else:
             print("Try-on settings update failed:", product.get("name"))
 
-<<<<<<< HEAD
-=======
     def toggle_product_tryon(self, product, enabled):
         product_id = product.get("id")
         if not product_id:
@@ -441,14 +429,11 @@ class SmartMirrorApp(QMainWindow):
         self.go_to_tryon_settings()
         self.update_admin_dashboard_summary()
 
->>>>>>> c40243b (Old versions to a archive repo. Only active files here)
     def logout_admin(self):
         self.current_admin = None
         self.admin_login_screen.clear_form()
         self.stack.setCurrentWidget(self.department_screen)
 
-<<<<<<< HEAD
-=======
     def undo_last_admin_change(self):
         confirm = QMessageBox.question(
             self,
@@ -471,7 +456,6 @@ class SmartMirrorApp(QMainWindow):
                 "No recorded data change is available.",
             )
 
->>>>>>> c40243b (Old versions to a archive repo. Only active files here)
     def go_to_category_screen(self, department):
         self.selected_department = department
         self.category_screen.set_department(department)
@@ -498,16 +482,16 @@ class SmartMirrorApp(QMainWindow):
 
     def go_to_product_detail_screen(self, product):
         self.selected_product = product
+        self.event_tracker.track("product_viewed", product.get("id"))
         self.product_detail_screen.set_product(product)
         self.stack.setCurrentWidget(self.product_detail_screen)
 
     def go_back_to_catalogue(self):
         self.stack.setCurrentWidget(self.catalogue_screen)
 
-<<<<<<< HEAD
-=======
     def add_product_to_basket(self, product, size):
         self.basket_service.add(product, size)
+        self.event_tracker.track("basket_added", product.get("id"), {"size": size})
         self.logger.info("Basket item added: product_id=%s size=%s", product.get("id"), size)
         QMessageBox.information(
             self,
@@ -517,6 +501,7 @@ class SmartMirrorApp(QMainWindow):
 
     def go_to_basket(self):
         self.basket_screen.refresh()
+        self.event_tracker.track("basket_viewed")
         self.stack.setCurrentWidget(self.basket_screen)
 
     def go_back_from_basket(self):
@@ -524,8 +509,8 @@ class SmartMirrorApp(QMainWindow):
 
     def basket_cleared(self):
         self.logger.info("Basket cleared")
+        self.event_tracker.track("basket_cleared")
 
->>>>>>> c40243b (Old versions to a archive repo. Only active files here)
     def go_to_camera_warning_screen(self, product):
         self.selected_product = product
         self.camera_warning_screen.set_product(product)
@@ -576,6 +561,7 @@ class SmartMirrorApp(QMainWindow):
                 product = self.prepare_product_for_tryon(full_product)
 
         self.selected_product = product
+        self.event_tracker.track("tryon_started", product.get("id"))
         self.tryon_screen.start_camera(product)
         self.stack.setCurrentWidget(self.tryon_screen)
 
@@ -720,8 +706,4 @@ if __name__ == "__main__":
     window = SmartMirrorApp()
     window.show()
 
-<<<<<<< HEAD
     sys.exit(app.exec())
-=======
-    sys.exit(app.exec())
->>>>>>> c40243b (Old versions to a archive repo. Only active files here)

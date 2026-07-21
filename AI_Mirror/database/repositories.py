@@ -19,12 +19,14 @@ class ProductRepository:
                     available,
                     discount,
                     discount_price,
+                    discount_type,
+                    discount_value,
                     location,
                     tryon_enabled,
                     tryon_category,
                     active
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     product.product_code,
@@ -38,6 +40,8 @@ class ProductRepository:
                     int(product.available),
                     int(product.discount),
                     product.discount_price,
+                    product.discount_type,
+                    product.discount_value,
                     product.location,
                     int(product.tryon_enabled),
                     product.tryon_category,
@@ -140,12 +144,7 @@ class ProductRepository:
             connection.execute(
                 """
                 UPDATE products
-<<<<<<< HEAD
-                SET tryon_enabled = 1,
-                    updated_at = CURRENT_TIMESTAMP
-=======
                 SET updated_at = CURRENT_TIMESTAMP
->>>>>>> c40243b (Old versions to a archive repo. Only active files here)
                 WHERE id = ?
                 """,
                 (product_id,)
@@ -221,6 +220,8 @@ class ProductRepository:
             "available",
             "discount",
             "discount_price",
+            "discount_type",
+            "discount_value",
             "location",
             "tryon_enabled",
             "tryon_category",
@@ -290,8 +291,4 @@ class ProductRepository:
                 """
             ).fetchall()
 
-<<<<<<< HEAD
             return [dict(row) for row in rows]
-=======
-            return [dict(row) for row in rows]
->>>>>>> c40243b (Old versions to a archive repo. Only active files here)

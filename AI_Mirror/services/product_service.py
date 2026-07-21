@@ -3,6 +3,7 @@ import json
 from paths import CATALOGUE_PATH
 from database.repositories import ProductRepository
 from models.product import Product
+from services.discount_service import DiscountService
 
 
 class ProductCatalog:
@@ -53,20 +54,14 @@ class ProductCatalog:
         converted = []
 
         for product in products:
-<<<<<<< HEAD
-            converted.append({
-                "id": product.get("id"),
-                "name": product.get("name"),
-                "department": product.get("department"),
-                "category": product.get("category"),
-=======
             full_product = self.repository.get_product_by_id(product.get("id")) or product
             sizes = [
                 item.get("size")
                 for item in full_product.get("sizes", [])
                 if item.get("size") and item.get("quantity", 0) > 0
             ]
-            price_value = float(product.get("price", 0))
+            discount = DiscountService.calculate(product.get("price", 0), bool(product.get("discount")), product.get("discount_type"), product.get("discount_value"), product.get("discount_price"))
+            price_value = discount["final_price"]
             converted.append({
                 "id": product.get("id"),
                 "product_code": product.get("product_code"),
@@ -74,23 +69,25 @@ class ProductCatalog:
                 "department": product.get("department"),
                 "category": product.get("category"),
                 "price_value": price_value,
->>>>>>> c40243b (Old versions to a archive repo. Only active files here)
+                "original_price": discount["original_price"],
+                "final_price": discount["final_price"],
                 "price": f"£{product.get('price')}",
                 "colour": product.get("colour"),
                 "description": product.get("description"),
                 "image": product.get("image_path"),
                 "image_path": product.get("image_path"),
                 "available": bool(product.get("available")),
-                "discount": bool(product.get("discount")),
+                "discount": discount["active"],
                 "discount_price": product.get("discount_price"),
+                "discount_type": discount["discount_type"],
+                "discount_value": discount["discount_value"],
+                "discount_text": discount["discount_text"],
+                "saving_amount": discount["saving_amount"],
+                "saving_percentage": discount["saving_percentage"],
                 "location": product.get("location"),
-<<<<<<< HEAD
-                "tryon_category": product.get("tryon_category"),
-=======
                 "tryon_enabled": bool(product.get("tryon_enabled")),
                 "tryon_category": product.get("tryon_category"),
                 "sizes": sizes,
->>>>>>> c40243b (Old versions to a archive repo. Only active files here)
             })
 
         return converted
@@ -181,6 +178,8 @@ class ProductService:
             available=product_data.get("available", True),
             discount=product_data.get("discount", False),
             discount_price=product_data.get("discount_price"),
+            discount_type=product_data.get("discount_type"),
+            discount_value=product_data.get("discount_value"),
             location=product_data.get("location", ""),
             tryon_enabled=product_data.get("tryon_enabled", False),
             tryon_category=product_data.get("tryon_category"),
@@ -223,8 +222,4 @@ class ProductService:
         return self.repository.get_deleted_products()
     
     def get_product_for_tryon(self, product_id: int):
-<<<<<<< HEAD
         return self.repository.get_product_by_id(product_id)
-=======
-        return self.repository.get_product_by_id(product_id)
->>>>>>> c40243b (Old versions to a archive repo. Only active files here)

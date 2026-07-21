@@ -229,7 +229,7 @@ class CatalogueScreen(QWidget):
 
         # Discount badge stays inside the image area.
         # It does not take extra space, so image/card size remains the same.
-        discount_badge = QLabel("DISCOUNT", image_box)
+        discount_badge = QLabel("", image_box)
         discount_badge.setAlignment(Qt.AlignCenter)
         discount_badge.setFixedSize(120, 32)
         discount_badge.move(340, 10)
@@ -244,7 +244,11 @@ class CatalogueScreen(QWidget):
             }
         """)
 
-        if product.get("discount"):
+        if not product.get("available", False):
+            discount_badge.setText("OUT OF STOCK")
+            discount_badge.show()
+        elif product.get("discount"):
+            discount_badge.setText(product.get("discount_text") or "DISCOUNT")
             discount_badge.show()
         else:
             discount_badge.hide()
@@ -268,7 +272,14 @@ class CatalogueScreen(QWidget):
         # -------------------------
         # PRODUCT PRICE
         # -------------------------
-        price = QLabel(str(product.get("price", "N/A")))
+        if product.get("discount"):
+            original = float(product.get("original_price", 0))
+            final = float(product.get("final_price", original))
+            price_text = f'<span style="color:#aab3bd; text-decoration:line-through;">£{original:.2f}</span>&nbsp;&nbsp;<span style="color:#00ff99;">£{final:.2f}</span>'
+        else:
+            price_text = str(product.get("price", "N/A"))
+        price = QLabel(price_text)
+        price.setTextFormat(Qt.RichText)
         price.setAlignment(Qt.AlignCenter)
         price.setStyleSheet("""
             QLabel {

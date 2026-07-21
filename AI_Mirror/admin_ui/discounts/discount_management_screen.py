@@ -4,6 +4,7 @@ from PySide6.QtWidgets import (
     QDialog, QMessageBox, QCheckBox
 )
 from PySide6.QtCore import Qt
+from services.discount_service import DiscountService
 
 
 class DiscountManagementScreen(QWidget):
@@ -169,11 +170,10 @@ class DiscountManagementScreen(QWidget):
         """)
 
         discount_enabled = bool(product.get("discount", False))
-        discount_price = product.get("discount_price")
-
-        price_text = f"Price: £{product.get('price', 'N/A')}"
-        if discount_enabled and discount_price is not None:
-            price_text += f"\nDiscount Price: £{discount_price}"
+        result = DiscountService.calculate(product.get("price", 0), discount_enabled, product.get("discount_type"), product.get("discount_value"), product.get("discount_price"))
+        price_text = f"Original: £{result['original_price']:.2f}"
+        if result["active"]:
+            price_text += f"\n{result['discount_text']}  →  New: £{result['final_price']:.2f}"
         else:
             price_text += "\nDiscount: OFF"
 
@@ -265,7 +265,7 @@ class DiscountUpdateDialog(QDialog):
             }
         """)
 
-        current_price = QLabel(f"Current Price: £{product.get('price', 'N/A')}")
+        current_price = QLabel(f"Original Price: £{float(product.get('price', 0)):.2f}")
         current_price.setAlignment(Qt.AlignCenter)
         current_price.setStyleSheet("""
             QLabel {
@@ -285,14 +285,15 @@ class DiscountUpdateDialog(QDialog):
             }
         """)
 
-        self.discount_price_input = QLineEdit()
-        self.discount_price_input.setPlaceholderText("Discount price e.g. 9.99")
-        self.discount_price_input.setFixedHeight(55)
-
-        if product.get("discount_price") is not None:
-            self.discount_price_input.setText(str(product.get("discount_price")))
-
-        self.discount_price_input.setStyleSheet("""
+        fields = QHBoxLayout()
+        amount_column, percentage_column = QVBoxLayout(), QVBoxLayout()
+        amount_label, percentage_label = QLabel("Amount off (£)"), QLabel("Percentage off (%)")
+        for label in (amount_label, percentage_label):
+            label.setStyleSheet("font-size: 15px; color: #c8d0d8; border: none;")
+        self.amount_input, self.percentage_input = QLineEdit(), QLineEdit()
+        self.amount_input.setPlaceholderText("e.g. 5.00")
+        self.percentage_input.setPlaceholderText("e.g. 20")
+        input_style = """
             QLineEdit {
                 font-size: 17px;
                 color: white;
@@ -301,7 +302,24 @@ class DiscountUpdateDialog(QDialog):
                 border-radius: 10px;
                 padding-left: 12px;
             }
-        """)
+        """
+        for field in (self.amount_input, self.percentage_input):
+            field.setFixedHeight(55)
+            field.setStyleSheet(input_style)
+        self.amount_input.textEdited.connect(self.clear_percentage)
+        self.percentage_input.textEdited.connect(self.clear_amount)
+        dtype, value = product.get("discount_type"), product.get("discount_value")
+        if dtype == "percentage" and value is not None:
+            self.percentage_input.setText(str(value))
+        elif dtype == "amount" and value is not None:
+            self.amount_input.setText(str(value))
+        elif product.get("discount") and product.get("discount_price") is not None:
+            legacy_amount = float(product.get("price", 0)) - float(product["discount_price"])
+            if legacy_amount > 0:
+                self.amount_input.setText(f"{legacy_amount:.2f}")
+        amount_column.addWidget(amount_label); amount_column.addWidget(self.amount_input)
+        percentage_column.addWidget(percentage_label); percentage_column.addWidget(self.percentage_input)
+        fields.addLayout(amount_column); fields.addLayout(percentage_column)
 
         button_row = QHBoxLayout()
 
@@ -322,7 +340,7 @@ class DiscountUpdateDialog(QDialog):
         main_layout.addWidget(title)
         main_layout.addWidget(current_price)
         main_layout.addWidget(self.discount_checkbox)
-        main_layout.addWidget(self.discount_price_input)
+        main_layout.addLayout(fields)
         main_layout.addLayout(button_row)
 
         self.setLayout(main_layout)
@@ -331,28 +349,41 @@ class DiscountUpdateDialog(QDialog):
     def handle_save(self):
         try:
             discount_enabled = self.discount_checkbox.isChecked()
-            price_text = self.discount_price_input.text().strip()
-
-            discount_price = None
+            amount_text = self.amount_input.text().strip()
+            percentage_text = self.percentage_input.text().strip()
+            discount_type = discount_value = discount_price = None
             if discount_enabled:
-                if not price_text:
-                    raise ValueError("Please enter discount price.")
-
-                discount_price = float(price_text)
-
-                if discount_price < 0:
-                    raise ValueError("Discount price cannot be negative.")
+                if bool(amount_text) == bool(percentage_text):
+                    raise ValueError("Enter either an amount or a percentage, not both.")
+                original = float(self.product.get("price", 0))
+                if amount_text:
+                    discount_type, discount_value = "amount", float(amount_text)
+                    if discount_value <= 0 or discount_value > original:
+                        raise ValueError("Amount must be more than 0 and no more than the original price.")
+                else:
+                    discount_type, discount_value = "percentage", float(percentage_text)
+                    if discount_value <= 0 or discount_value > 100:
+                        raise ValueError("Percentage must be between 0 and 100.")
+                discount_price = DiscountService.calculate(original, True, discount_type, discount_value)["final_price"]
 
             self.on_save(
                 self.product,
                 discount_enabled,
-                discount_price
+                discount_type, discount_value, discount_price
             )
 
             self.accept()
 
         except Exception as error:
             QMessageBox.warning(self, "Discount Error", str(error))
+
+    def clear_percentage(self, text):
+        if text:
+            self.percentage_input.clear()
+
+    def clear_amount(self, text):
+        if text:
+            self.amount_input.clear()
 
     def green_button_style(self):
         return """

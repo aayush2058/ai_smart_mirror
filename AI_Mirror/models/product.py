@@ -16,6 +16,8 @@ class Product:
     available: bool = True
     discount: bool = False
     discount_price: Optional[float] = None
+    discount_type: Optional[str] = None
+    discount_value: Optional[float] = None
     location: str = ""
     tryon_enabled: bool = False
     tryon_category: Optional[str] = None

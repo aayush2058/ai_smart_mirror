@@ -25,6 +25,8 @@ def create_database_schema():
                 available INTEGER NOT NULL DEFAULT 1,
                 discount INTEGER NOT NULL DEFAULT 0,
                 discount_price REAL,
+                discount_type TEXT,
+                discount_value REAL,
                 location TEXT,
                 tryon_enabled INTEGER NOT NULL DEFAULT 0,
                 tryon_category TEXT,
@@ -54,9 +56,6 @@ def create_database_schema():
                     REFERENCES products(id)
                     ON DELETE CASCADE
             );
-<<<<<<< HEAD
-        """)
-=======
 
             CREATE TABLE IF NOT EXISTS admin_undo_actions (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -79,4 +78,8 @@ def create_database_schema():
             CREATE INDEX IF NOT EXISTS idx_analytics_event_type ON analytics_events(event_type);
             CREATE INDEX IF NOT EXISTS idx_analytics_product ON analytics_events(product_id);
         """)
->>>>>>> c40243b (Old versions to a archive repo. Only active files here)
+        product_columns = {row["name"] for row in connection.execute("PRAGMA table_info(products)").fetchall()}
+        if "discount_type" not in product_columns:
+            connection.execute("ALTER TABLE products ADD COLUMN discount_type TEXT")
+        if "discount_value" not in product_columns:
+            connection.execute("ALTER TABLE products ADD COLUMN discount_value REAL")
