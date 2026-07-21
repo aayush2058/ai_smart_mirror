@@ -61,12 +61,13 @@ FIT_PRESETS = {
 }
 
 class TryOnSettingsScreen(QWidget):
-    def __init__(self, on_back, on_update_tryon):
+    def __init__(self, on_back, on_update_tryon, on_preview_tryon):
         super().__init__()
 
         self.on_back = on_back
         self.on_update_tryon = on_update_tryon
         self.products = []
+        self.on_preview_tryon = on_preview_tryon
 
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(45, 35, 45, 35)
@@ -267,10 +268,14 @@ class TryOnSettingsScreen(QWidget):
         return row
 
     def open_settings_dialog(self, product):
+        print("Opening Try-On Settings dialog for:", product.get("name"))
+
         dialog = TryOnSettingsDialog(
             product=product,
-            on_save=self.on_update_tryon
+            on_save=self.on_update_tryon,
+            on_preview=self.on_preview_tryon,
         )
+
         dialog.exec()
 
     def clear_products(self):
@@ -282,12 +287,12 @@ class TryOnSettingsScreen(QWidget):
 
 
 class TryOnSettingsDialog(QDialog):
-    def __init__(self, product, on_save):
+    def __init__(self, product, on_save, on_preview):
         super().__init__()
 
         self.product = product
         self.on_save = on_save
-
+        self.on_preview = on_preview
         self.setWindowTitle("Adjust Try-On Fit")
         self.setMinimumWidth(620)
 
@@ -425,8 +430,18 @@ class TryOnSettingsDialog(QDialog):
         save_button.setStyleSheet(self.green_button_style())
         save_button.clicked.connect(self.handle_save)
 
+        preview_button = QPushButton("Preview Current Fit")
+        preview_button.setFixedSize(190, 50)
+        preview_button.setStyleSheet(
+            self.blue_button_style()
+        )
+        preview_button.clicked.connect(
+            self.handle_preview
+        )
+
         button_row.addWidget(reset_button)
         button_row.addStretch()
+        button_row.addWidget(preview_button)
         button_row.addWidget(cancel_button)
         button_row.addWidget(save_button)
         
@@ -463,6 +478,55 @@ class TryOnSettingsDialog(QDialog):
         self.setStyleSheet("background-color: #10151c;")
 
         self.update_labels()
+
+    def get_current_fit_values(self):
+        return {
+            "width_scale": (
+                self.width_slider.value() / 100
+            ),
+            "height_scale": (
+                self.height_slider.value() / 100
+            ),
+            "vertical_offset": (
+                self.vertical_slider.value() / 100
+            ),
+            "horizontal_offset": (
+                self.horizontal_slider.value()
+            ),
+        }
+
+    def handle_preview(self):
+        values = self.get_current_fit_values()
+
+        preview_product = dict(self.product)
+        preview_product["fit"] = values
+
+        preview_product["image"] = (
+            preview_product.get("image_path")
+            or preview_product.get("image")
+            or ""
+        )
+
+        self.accept()
+        self.on_preview(preview_product)
+
+    def handle_save(self):
+        try:
+            values = self.get_current_fit_values()
+
+            self.on_save(
+                self.product,
+                values
+            )
+
+            self.accept()
+
+        except Exception as error:
+            QMessageBox.warning(
+                self,
+                "Try-On Settings Error",
+                str(error)
+            )
 
     def create_slider(self, label_text, minimum, maximum, value):
         label = QLabel(label_text)

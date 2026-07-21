@@ -32,7 +32,7 @@ class SmartMirrorApp(QMainWindow):
 
         self.setWindowTitle("AI Smart Mirror")
         self.setMinimumSize(1200, 800)
-
+        self.tryon_opened_from_admin = False
         self.selected_department = None
         self.selected_category = None
         self.selected_product = None
@@ -135,7 +135,8 @@ class SmartMirrorApp(QMainWindow):
 
         self.tryon_settings_screen = TryOnSettingsScreen(
             on_back=self.go_to_admin_dashboard,
-            on_update_tryon=self.update_product_tryon_settings
+            on_update_tryon=self.update_product_tryon_settings,
+            on_preview_tryon=self.preview_admin_tryon_fit
         )
 
         self.deleted_products_screen = DeletedProductsScreen(
@@ -243,6 +244,16 @@ class SmartMirrorApp(QMainWindow):
         print("Stock updated:", product.get("name"))
 
         self.go_to_inventory()
+
+    def preview_admin_tryon_fit(self, product):
+        self.tryon_opened_from_admin = True
+        self.selected_product = product
+
+        self.tryon_screen.start_camera(product)
+
+        self.stack.setCurrentWidget(
+            self.tryon_screen
+        )
 
     def go_to_discounts(self):
         products = self.product_service.get_products()
@@ -414,8 +425,16 @@ class SmartMirrorApp(QMainWindow):
 
     def exit_virtual_try_on(self):
         self.tryon_screen.stop_camera()
-        self.stack.setCurrentWidget(self.product_detail_screen)
 
+        if self.tryon_opened_from_admin:
+            self.tryon_opened_from_admin = False
+            self.go_to_tryon_settings()
+            return
+
+        self.stack.setCurrentWidget(
+            self.product_detail_screen
+        )
+        
     def go_to_admin_dashboard(self):
         self.update_admin_dashboard_summary()
         self.stack.setCurrentWidget(self.admin_dashboard_screen)

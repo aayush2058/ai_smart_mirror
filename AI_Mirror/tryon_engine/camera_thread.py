@@ -6,9 +6,18 @@ import time
 
 class ThreadedCamera:
 
+    @staticmethod
+    def _open_camera(camera_index):
+        for backend in (cv2.CAP_DSHOW, cv2.CAP_MSMF, cv2.CAP_ANY):
+            cap = cv2.VideoCapture(camera_index, backend)
+            if cap.isOpened():
+                return cap
+            cap.release()
+        return cv2.VideoCapture(camera_index)
+
     def __init__(self, camera_index=0, width=960, height=540, fps=30):
 
-        self.cap = cv2.VideoCapture(camera_index, cv2.CAP_DSHOW)
+        self.cap = self._open_camera(camera_index)
 
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)

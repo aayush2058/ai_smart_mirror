@@ -35,8 +35,13 @@ def start_camera():
         fps=30
     )
 
+    if not camera.running:
+        release()
+        return False
+
     frame_count = 0
     last_landmarks = None
+    return True
 
 
 def get_frame():

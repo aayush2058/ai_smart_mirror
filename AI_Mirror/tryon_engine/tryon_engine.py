@@ -32,7 +32,7 @@ class TryOnEngine:
         """
 
         if self.started:
-            return
+            return True
 
         self.selected_product = selected_product
 
@@ -51,12 +51,15 @@ class TryOnEngine:
         self.clothes = ClothingOverlay(catalogue_path="data/catalogue.json")
         self.segmenter = PersonSegmenter()
 
-        self.camera_module["start_camera"]()
+        if not self.camera_module["start_camera"]():
+            self.stop()
+            return False
 
         if selected_product is not None:
             self.clothes.select_product_from_interface(selected_product)
 
         self.started = True
+        return True
 
     def read_frame(self):
         """

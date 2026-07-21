@@ -110,13 +110,22 @@ class TryOnScreen(QWidget):
             self.product_label.setText("No product selected")
 
     def start_camera(self, product):
+        self.timer.stop()
         self.set_product(product)
         self.camera_frame.setText("Starting camera...")
 
-        self.engine.start(product)
+        started = self.engine.start(product)
+
+        if not started:
+            self.camera_frame.setText(
+                "Could not open the camera. Close other camera apps, check "
+                "Windows camera permissions, then try again."
+            )
+            return False
 
         # Around 30 FPS UI refresh
         self.timer.start(33)
+        return True
 
     def update_camera_frame(self):
         frame = self.engine.read_frame()

@@ -383,6 +383,12 @@ class ClothingOverlay:
 
         product = self.catalogue[product_index]
 
+        # Admin previews carry unsaved slider values in `fit`. Apply them to
+        # this in-memory catalogue instance without writing catalogue.json.
+        preview_fit = selected_product.get("fit")
+        if preview_fit:
+            product["fit"] = dict(preview_fit)
+
         tryon_category = product.get("tryon_category", "")
         category = product.get("category", "")
 
