@@ -372,22 +372,6 @@ class TryOnSettingsDialog(QDialog):
         self.preset_combo = QComboBox()
         self.preset_combo.addItems(FIT_PRESETS.keys())
         self.preset_combo.setFixedHeight(48)
-        self.preset_combo.setStyleSheet("""
-            QComboBox {
-                font-size: 17px;
-                color: white;
-                background-color: #1c2530;
-                border: 1px solid #34495e;
-                border-radius: 10px;
-                padding-left: 12px;
-            }
-
-            QComboBox QAbstractItemView {
-                background-color: #1c2530;
-                color: white;
-                selection-background-color: #2d89ef;
-            }
-        """)
 
         self.apply_preset_button = QPushButton("Apply Preset")
         self.apply_preset_button.setFixedSize(150, 48)

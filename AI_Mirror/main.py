@@ -46,6 +46,7 @@ from services.prediction_service import PredictionService
 from admin_ui.superadmin.super_admin_dashboard import SuperAdminDashboard
 from admin_ui.superadmin.account_management_screen import AccountManagementScreen
 from admin_ui.superadmin.prediction_dashboard_screen import PredictionDashboardScreen
+from admin_ui.widgets.control_styles import application_control_styles
 
 class SmartMirrorApp(QMainWindow):
     def __init__(self):
@@ -841,6 +842,7 @@ if __name__ == "__main__":
     create_database_schema()
 
     app = QApplication(sys.argv)
+    app.setStyleSheet(application_control_styles())
 
     window = SmartMirrorApp()
     window.show()

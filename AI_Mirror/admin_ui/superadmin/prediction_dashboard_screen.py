@@ -1,9 +1,10 @@
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor
-from PySide6.QtWidgets import (QComboBox, QFrame, QHBoxLayout, QLabel, QMessageBox,
+from PySide6.QtWidgets import (QComboBox, QFrame, QHBoxLayout, QLabel, QLineEdit, QMessageBox,
                                QPushButton, QScrollArea, QTableWidget, QTableWidgetItem,
                                QVBoxLayout, QWidget)
 from admin_ui.widgets.chart_widgets import BarChartWidget, LineChartWidget
+from admin_ui.widgets.chart_detail_dialog import open_chart_detail
 
 
 class PredictionDashboardScreen(QWidget):
@@ -22,14 +23,14 @@ class PredictionDashboardScreen(QWidget):
             widget.setStyleSheet("font-size:16px;color:white;background:#263441;border:1px solid #4b6072;border-radius:9px;padding:7px;")
         for button in (generate, export, back):
             button.setMinimumSize(135, 46); button.setStyleSheet("font-size:16px;color:white;background:#6c54c7;border-radius:9px;")
-        header.addWidget(title, 1); header.addWidget(back)
+        header.addWidget(title, 1); header.addWidget(generate); header.addWidget(back)
         toolbar = QHBoxLayout(); toolbar.setSpacing(10)
         forecast_label = QLabel("Forecast days"); training_label = QLabel("Minimum training rows")
         for label in (forecast_label, training_label):
             label.setStyleSheet("font-size:15px;color:#c7d1d9;")
         toolbar.addWidget(forecast_label); toolbar.addWidget(self.horizon)
         toolbar.addSpacing(12); toolbar.addWidget(training_label); toolbar.addWidget(self.minimum_rows)
-        toolbar.addStretch(); toolbar.addWidget(generate); toolbar.addWidget(export)
+        toolbar.addStretch(); toolbar.addWidget(export)
         self.model_status = QLabel("No prediction run loaded."); self.model_status.setWordWrap(True)
         self.model_status.setStyleSheet("font-size:17px;color:white;background:#19242e;padding:14px;border:1px solid #34495e;border-radius:12px;")
         privacy = QLabel(
@@ -37,6 +38,15 @@ class PredictionDashboardScreen(QWidget):
             "No camera images, faces, names or customer identities are collected. Low-data results are explicitly marked Low confidence."
         )
         privacy.setWordWrap(True); privacy.setStyleSheet("font-size:15px;color:#b9c4ce;background:#14201b;padding:12px;border-radius:10px;")
+        filters = QHBoxLayout(); filters.setSpacing(10)
+        self.search = QLineEdit(); self.search.setPlaceholderText("Search product...")
+        self.risk = QComboBox(); self.risk.addItems(["All risks", "Critical", "High", "Medium", "Low"])
+        self.confidence = QComboBox(); self.confidence.addItems(["All confidence", "High", "Medium", "Low"])
+        clear = QPushButton("Clear"); clear.setObjectName("clearButton"); clear.clicked.connect(self.clear_filters); self.result_count = QLabel("0 results")
+        for widget in (self.search, self.risk, self.confidence):
+            widget.setMinimumHeight(44); widget.setStyleSheet("font-size:15px;color:white;background:#263441;border:1px solid #4b6072;border-radius:9px;padding:7px;")
+        self.search.setMinimumWidth(240); filters.addWidget(self.search, 1); filters.addWidget(self.risk); filters.addWidget(self.confidence); filters.addWidget(clear); filters.addWidget(self.result_count)
+        self.search.textChanged.connect(self.apply_filters); self.risk.currentIndexChanged.connect(self.apply_filters); self.confidence.currentIndexChanged.connect(self.apply_filters)
         self.table = QTableWidget(0, 9)
         self.table.setHorizontalHeaderLabels(
             ["Product", "Demand", "Conversion", "Stock", "Risk", "Confidence", "Views", "Try-Ons", "Recommended Action"]
@@ -50,9 +60,11 @@ class PredictionDashboardScreen(QWidget):
         charts = QHBoxLayout(); charts.setSpacing(12)
         self.demand_chart = BarChartWidget("Forecast Demand vs Available Stock", "Top products by predicted demand")
         self.conversion_chart = LineChartWidget("Predicted Conversion Profile", "Basket-conversion likelihood by product")
+        self.demand_chart.set_compact(); self.conversion_chart.set_compact()
+        self.demand_chart.clicked.connect(lambda: open_chart_detail(self.demand_chart, self))
+        self.conversion_chart.clicked.connect(lambda: open_chart_detail(self.conversion_chart, self))
         charts.addWidget(self.demand_chart); charts.addWidget(self.conversion_chart)
-        root.addLayout(header); root.addLayout(toolbar); root.addWidget(self.model_status)
-        root.addWidget(privacy); root.addLayout(charts); root.addWidget(self.table, 1)
+        root.addLayout(header); root.addLayout(charts); root.addStretch()
         self.setStyleSheet("background:#0d131a;color:white;")
         settings = self.prediction_service.settings()
         self.horizon.setCurrentText(str(settings["horizon_days"]))
@@ -81,7 +93,15 @@ class PredictionDashboardScreen(QWidget):
             f'<b>Model:</b> {model} | <b>Training rows:</b> {metrics.get("training_rows", 0)} | '
             f'<b>Events:</b> {metrics.get("event_count", 0)}{accuracy} | <b>Generated:</b> {result.get("generated_at", "")}'
         )
-        rows = result["predictions"]; self.table.setRowCount(len(rows))
+        self.apply_filters()
+
+    def apply_filters(self):
+        rows = list(self.result["predictions"]) if self.result else []
+        query = self.search.text().strip().lower(); risk = self.risk.currentText(); confidence = self.confidence.currentText()
+        rows = [item for item in rows if (not query or query in item["name"].lower())
+                and (risk == "All risks" or item["stock_risk"] == risk)
+                and (confidence == "All confidence" or item["confidence"] == confidence)]
+        self.result_count.setText(f"{len(rows)} results"); self.table.setRowCount(len(rows))
         chart_rows = sorted(rows, key=lambda item: item["expected_demand"], reverse=True)[:8]
         labels = [item["name"] for item in chart_rows]
         self.demand_chart.set_data(labels, [
@@ -102,6 +122,9 @@ class PredictionDashboardScreen(QWidget):
                 self.table.setItem(row_index, column, cell)
         self.table.resizeColumnsToContents()
         self.table.setColumnWidth(8, max(320, self.table.columnWidth(8)))
+
+    def clear_filters(self):
+        self.search.clear(); self.risk.setCurrentIndex(0); self.confidence.setCurrentIndex(0)
 
     def export(self):
         if not self.result:

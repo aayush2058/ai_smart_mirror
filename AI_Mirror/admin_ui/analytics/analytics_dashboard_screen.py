@@ -1,8 +1,9 @@
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import (QFrame, QGridLayout, QHBoxLayout, QLabel, QMessageBox,
+from PySide6.QtWidgets import (QComboBox, QFrame, QGridLayout, QHBoxLayout, QLabel, QMessageBox,
                                QPushButton, QScrollArea, QVBoxLayout, QWidget)
 
 from admin_ui.widgets.chart_widgets import BarChartWidget, LineChartWidget
+from admin_ui.widgets.chart_detail_dialog import open_chart_detail
 
 
 class AnalyticsDashboardScreen(QWidget):
@@ -18,9 +19,19 @@ class AnalyticsDashboardScreen(QWidget):
         for button, colour in ((export, "#008f68"), (back, "#465565")):
             button.setFixedSize(190 if button is export else 130, 48)
             button.setStyleSheet(f"font-size:16px;color:white;background:{colour};border-radius:10px;")
-        header.addWidget(title, 1); header.addWidget(export); header.addWidget(back)
+        header.addWidget(title, 1); header.addWidget(back)
         subtitle = QLabel("Anonymous activity, conversion flow and stock-position signals from this offline mirror.")
         subtitle.setWordWrap(True); subtitle.setStyleSheet("font-size:17px;color:#b8c4ce;")
+        filters = QHBoxLayout(); filters.setSpacing(10); filters.addWidget(QLabel("Period"))
+        self.period = QComboBox()
+        for label, days in (("Last 7 days", 7), ("Last 14 days", 14), ("Last 30 days", 30), ("Last 90 days", 90)):
+            self.period.addItem(label, days)
+        self.period.setCurrentIndex(1); filters.addWidget(self.period); filters.addWidget(QLabel("Product"))
+        self.product = QComboBox(); self.product.setMinimumWidth(260); filters.addWidget(self.product, 1)
+        clear = QPushButton("Clear"); clear.setObjectName("clearButton"); clear.setFixedSize(100, 44); clear.clicked.connect(self.clear_filters); filters.addWidget(clear)
+        for widget in (self.period, self.product):
+            widget.setMinimumHeight(44); widget.setStyleSheet("font-size:15px;color:white;background:#263441;border:1px solid #4b6072;border-radius:9px;padding:7px;")
+        self.period.currentIndexChanged.connect(self.refresh); self.product.currentIndexChanged.connect(self.refresh)
         self.kpi_grid = QGridLayout(); self.kpi_grid.setSpacing(10); self.kpis = {}
         cards = (("sessions", "Mirror Sessions", "#2d89ef"), ("views", "Product Views", "#6c63d9"),
                  ("tryons", "Virtual Try-Ons", "#00a884"), ("baskets", "Basket Adds", "#e38b3a"),
@@ -34,15 +45,22 @@ class AnalyticsDashboardScreen(QWidget):
         charts = QHBoxLayout(); charts.setSpacing(12)
         self.activity_chart = LineChartWidget("14-Day Customer Activity", "Views, virtual try-ons and basket additions by day")
         self.stock_chart = BarChartWidget("Current Stock Logistics", "Products with healthy, low or zero stock")
+        self.activity_chart.set_compact(); self.stock_chart.set_compact()
+        self.activity_chart.clicked.connect(lambda: open_chart_detail(self.activity_chart, self))
+        self.stock_chart.clicked.connect(lambda: open_chart_detail(self.stock_chart, self))
         charts.addWidget(self.activity_chart, 2); charts.addWidget(self.stock_chart, 1)
         self.top_products = QLabel(); self.top_products.setWordWrap(True)
         self.top_products.setStyleSheet("font-size:16px;color:white;background:#18242e;padding:16px;border:1px solid #314657;border-radius:12px;")
-        layout.addLayout(header); layout.addWidget(subtitle); layout.addLayout(self.kpi_grid)
-        layout.addLayout(charts); layout.addWidget(self.top_products); layout.addStretch()
+        layout.addLayout(header); layout.addLayout(charts); layout.addStretch()
         scroll.setWidget(content); root.addWidget(scroll); self.setStyleSheet("background:#0d151d;")
 
     def refresh(self):
-        metrics = self.metrics_service.summary(); dashboard = self.metrics_service.dashboard_data()
+        if self.product.count() == 0:
+            self.product.blockSignals(True); self.product.addItem("All products", None)
+            for item in self.metrics_service.products_for_filter(): self.product.addItem(item["name"], item["id"])
+            self.product.blockSignals(False)
+        days = self.period.currentData(); product_id = self.product.currentData()
+        metrics = self.metrics_service.summary(days, product_id); dashboard = self.metrics_service.dashboard_data(days, product_id)
         for key in ("sessions", "views", "tryons", "baskets"):
             self.kpis[key].setText(str(metrics[key]))
         self.kpis["tryon_rate"].setText(f'{metrics["tryon_rate"]}%')
@@ -62,6 +80,9 @@ class AnalyticsDashboardScreen(QWidget):
             if rows else "Insights will appear after customers begin browsing."
         )
         self.top_products.setText(text)
+
+    def clear_filters(self):
+        self.period.setCurrentIndex(1); self.product.setCurrentIndex(0); self.refresh()
 
     def export_csv(self):
         destination = self.metrics_service.export_summary_csv()

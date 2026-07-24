@@ -109,21 +109,21 @@ class ProductDetailScreen(QWidget):
         self.recommendation_title = QLabel("Complete Your Outfit")
         self.recommendation_label = QLabel("")
         self.size_selector = QComboBox()
-        self.size_selector.setFixedSize(76, 46)
+        self.size_selector.setFixedSize(84, 50)
         arrow_icon = (Path(__file__).resolve().parents[1] / "assets" / "icons" / "chevron_down.svg").as_posix()
         combo_style = """
             QComboBox {
-                font-size: 18px;
+                font-size: 17px;
                 color: white;
                 background-color: #293746;
                 border: 1px solid #496176;
                 border-radius: 9px;
-                padding: 6px 28px 6px 10px;
+                padding: 4px 30px 4px 11px;
             }
             QComboBox::drop-down {
                 subcontrol-origin: padding;
                 subcontrol-position: top right;
-                width: 27px;
+                width: 30px;
                 border: none;
                 background-color: #293746;
                 border-top-right-radius: 8px;
@@ -147,10 +147,10 @@ class ProductDetailScreen(QWidget):
         self.add_basket_button = QPushButton("Add to Basket")
         self.quantity_selector = QComboBox()
         self.quantity_selector.addItems([str(value) for value in range(1, 11)])
-        self.quantity_selector.setFixedSize(72, 46)
+        self.quantity_selector.setFixedSize(84, 50)
         self.quantity_selector.setStyleSheet(self.size_selector.styleSheet())
-        self.add_basket_button.setMinimumSize(175, 46)
-        self.add_basket_button.setMaximumHeight(46)
+        self.add_basket_button.setMinimumSize(175, 50)
+        self.add_basket_button.setMaximumHeight(50)
         self.add_basket_button.setStyleSheet(
             "font-size: 18px; font-weight: bold; color: white; "
             "background: #2d89ef; border-radius: 11px;"

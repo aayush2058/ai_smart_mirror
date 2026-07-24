@@ -57,9 +57,8 @@ class CatalogueScreen(QWidget):
         self.sort_combo = QComboBox()
         self.sort_combo.addItems(["Recommended", "Price: Low to High", "Price: High to Low", "Name A-Z"])
         self.stock_only = QCheckBox("In stock only")
-        for widget in (self.search_input, self.sort_combo):
-            widget.setFixedHeight(48)
-            widget.setStyleSheet("font-size:17px;color:white;background:#232a32;border:1px solid #465666;border-radius:10px;padding:8px;")
+        for widget in (self.search_input, self.sort_combo): widget.setFixedHeight(48)
+        self.search_input.setStyleSheet("font-size:17px;color:white;background:#232a32;border:1px solid #465666;border-radius:10px;padding:8px;")
         self.stock_only.setStyleSheet("font-size:17px;color:white;")
         self.search_input.textChanged.connect(self.load_product_cards)
         self.sort_combo.currentIndexChanged.connect(self.load_product_cards)

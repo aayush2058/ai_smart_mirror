@@ -1,18 +1,31 @@
-from PySide6.QtCore import QPointF, QRectF, Qt
+from PySide6.QtCore import QPointF, QRectF, Qt, Signal
 from PySide6.QtGui import QColor, QFont, QLinearGradient, QPainter, QPainterPath, QPen
 from PySide6.QtWidgets import QWidget
 
 
 class ChartBase(QWidget):
+    clicked = Signal()
+
     def __init__(self, title, subtitle=""):
         super().__init__(); self.title = title; self.subtitle = subtitle
         self.labels = []; self.series = []
+        self.compact = False
         self.setMinimumHeight(260)
+        self.setCursor(Qt.PointingHandCursor)
+        self.setToolTip("Open full chart details")
 
     def set_data(self, labels, series):
         self.labels = list(labels)
         self.series = list(series)
         self.update()
+
+    def set_compact(self, enabled=True):
+        self.compact = enabled; self.update()
+
+    def mouseReleaseEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.clicked.emit()
+        super().mouseReleaseEvent(event)
 
     def _frame(self, painter):
         painter.setRenderHint(QPainter.Antialiasing)
@@ -22,9 +35,11 @@ class ChartBase(QWidget):
         painter.drawRoundedRect(QRectF(1, 1, self.width() - 2, self.height() - 2), 16, 16)
         painter.setPen(QColor("#ffffff")); painter.setFont(QFont("Segoe UI", 15, QFont.Bold))
         painter.drawText(QRectF(18, 12, self.width() - 36, 25), Qt.AlignLeft | Qt.AlignVCenter, self.title)
-        painter.setPen(QColor("#9fb0bf")); painter.setFont(QFont("Segoe UI", 9))
-        painter.drawText(QRectF(18, 37, self.width() - 36, 20), Qt.AlignLeft | Qt.AlignVCenter, self.subtitle)
-        return QRectF(54, 72, max(10, self.width() - 76), max(10, self.height() - 115))
+        if not self.compact:
+            painter.setPen(QColor("#9fb0bf")); painter.setFont(QFont("Segoe UI", 9))
+            painter.drawText(QRectF(18, 37, self.width() - 36, 20), Qt.AlignLeft | Qt.AlignVCenter, self.subtitle)
+        return QRectF(54, 52 if self.compact else 72, max(10, self.width() - 76),
+                      max(10, self.height() - (78 if self.compact else 115)))
 
     def _empty(self, painter, plot):
         painter.setPen(QColor("#8fa0ad")); painter.setFont(QFont("Segoe UI", 11))
@@ -42,6 +57,7 @@ class ChartBase(QWidget):
                              f"{maximum * ratio:.0f}")
 
     def _legend(self, painter):
+        if self.compact: return
         x = 18
         painter.setFont(QFont("Segoe UI", 8))
         for item in self.series:

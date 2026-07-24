@@ -40,15 +40,32 @@ class AccountManagementScreen(QWidget):
         actions.addWidget(create); actions.addWidget(undo); actions.addStretch()
         note = QLabel("Account creation, enable/disable and password resets are audited. Each action can be undone for 24 hours.")
         note.setWordWrap(True); note.setStyleSheet("font-size:17px;color:#b9c3cc;")
+        filters = QHBoxLayout(); filters.setSpacing(9)
+        self.search = QLineEdit(); self.search.setPlaceholderText("Search username..."); self.search.setMinimumWidth(230)
+        self.role_filter = QComboBox(); self.role_filter.addItem("All roles", None); self.role_filter.addItem("Administrator", "admin"); self.role_filter.addItem("Super Administrator", "super_admin")
+        self.status_filter = QComboBox(); self.status_filter.addItems(["All status", "Active", "Disabled"])
+        clear = QPushButton("Clear"); clear.setObjectName("clearButton"); clear.clicked.connect(self.clear_filters); self.result_count = QLabel()
+        for widget in (self.search, self.role_filter, self.status_filter):
+            widget.setMinimumHeight(44); widget.setStyleSheet("font-size:15px;color:white;background:#263441;border:1px solid #4b6072;border-radius:9px;padding:7px;")
+        filters.addWidget(self.search, 1); filters.addWidget(self.role_filter); filters.addWidget(self.status_filter); filters.addWidget(clear); filters.addWidget(self.result_count)
+        self.search.textChanged.connect(self.apply_filters); self.role_filter.currentIndexChanged.connect(self.apply_filters); self.status_filter.currentIndexChanged.connect(self.apply_filters)
         scroll = QScrollArea(); scroll.setWidgetResizable(True); scroll.setStyleSheet("border:none;background:#10151c;")
         container = QWidget(); self.list_layout = QVBoxLayout(container); self.list_layout.setSpacing(12); scroll.setWidget(container)
-        root.addLayout(header); root.addLayout(actions); root.addWidget(note); root.addWidget(scroll); self.setStyleSheet("background:#10151c;")
+        root.addLayout(header); root.addLayout(actions); root.addWidget(note); root.addLayout(filters); root.addWidget(scroll); self.setStyleSheet("background:#10151c;")
 
     def refresh(self):
+        self.users = self.auth_service.list_users(); self.apply_filters()
+
+    def apply_filters(self):
+        query = self.search.text().strip().lower(); role = self.role_filter.currentData(); status = self.status_filter.currentText()
+        users = [user for user in getattr(self, "users", []) if (not query or query in user["username"].lower())
+                 and (not role or user["role"] == role)
+                 and (status == "All status" or bool(user["active"]) == (status == "Active"))]
         while self.list_layout.count():
             item = self.list_layout.takeAt(0)
             if item.widget(): item.widget().deleteLater()
-        for user in self.auth_service.list_users():
+        self.result_count.setText(f"{len(users)} accounts")
+        for user in users:
             card = QFrame(); card.setStyleSheet("QFrame{background:#1c2530;border:1px solid #34495e;border-radius:13px;}")
             row = QHBoxLayout(card); info = QLabel(
                 f'<b>{user["username"]}</b>  ·  {user["role"].replace("_", " ").title()}<br>'
@@ -63,6 +80,9 @@ class AccountManagementScreen(QWidget):
             if user["id"] == self.current_user()["id"]: toggle.setEnabled(False); toggle.setToolTip("You cannot disable your signed-in account.")
             row.addWidget(info, 1); row.addWidget(reset); row.addWidget(toggle); self.list_layout.addWidget(card)
         self.list_layout.addStretch()
+
+    def clear_filters(self):
+        self.search.clear(); self.role_filter.setCurrentIndex(0); self.status_filter.setCurrentIndex(0)
 
     def create_account(self):
         dialog = AccountDialog("Create Staff Account")

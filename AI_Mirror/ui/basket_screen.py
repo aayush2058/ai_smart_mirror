@@ -45,6 +45,7 @@ class BasketScreen(QWidget):
         body.addWidget(self.qr_label)
 
         clear_button = QPushButton("Clear Basket")
+        clear_button.setObjectName("clearButton")
         clear_button.setFixedSize(180, 54)
         clear_button.clicked.connect(self.clear_basket)
         back_button = QPushButton("Continue Shopping")

@@ -271,16 +271,6 @@ class ProductFormScreen(QWidget):
 
     def style_combo(self, combo):
         combo.setFixedHeight(55)
-        combo.setStyleSheet("""
-            QComboBox {
-                font-size: 17px;
-                color: white;
-                background-color: #10151c;
-                border: 1px solid #34495e;
-                border-radius: 10px;
-                padding-left: 12px;
-            }
-        """)
 
     def handle_upload_image(self):
         file_path, _ = QFileDialog.getOpenFileName(
