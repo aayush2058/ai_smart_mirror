@@ -63,7 +63,10 @@ class CameraWarningScreen(QWidget):
             "This mirror will activate the camera only for live virtual try-on.\n\n"
             "No photo or video will be saved.\n"
             "The camera will turn off when you exit try-on mode.\n\n"
-            "Please stand fully visible in front of the mirror before starting."
+            "How to get the best fit:\n"
+            "1. Stand inside the camera view with your upper body visible.\n"
+            "2. Face the mirror and keep your shoulders relaxed.\n"
+            "3. Move slowly while the clothing adjusts to you."
         )
         message.setAlignment(Qt.AlignCenter)
         message.setWordWrap(True)

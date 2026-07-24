@@ -48,6 +48,10 @@ class TryOnScreen(QWidget):
             }
         """)
 
+        self.status_label = QLabel("Stand facing the mirror and move slowly for the best fit.")
+        self.status_label.setAlignment(Qt.AlignCenter)
+        self.status_label.setStyleSheet("font-size:17px;color:#c5ced7;background:#202a34;padding:10px;border-radius:10px;")
+
         self.camera_frame = QLabel("Starting camera...")
         self.camera_frame.setAlignment(Qt.AlignCenter)
         self.camera_frame.setMinimumSize(960, 540)
@@ -93,6 +97,7 @@ class TryOnScreen(QWidget):
 
         main_layout.addWidget(title)
         main_layout.addWidget(self.product_label)
+        main_layout.addWidget(self.status_label)
         main_layout.addWidget(camera_container)
         main_layout.addWidget(exit_button, alignment=Qt.AlignCenter)
 
@@ -113,6 +118,7 @@ class TryOnScreen(QWidget):
         self.timer.stop()
         self.set_product(product)
         self.camera_frame.setText("Starting camera...")
+        self.status_label.setText("Opening camera and locating your body...")
 
         started = self.engine.start(product)
 
@@ -121,10 +127,12 @@ class TryOnScreen(QWidget):
                 "Could not open the camera. Close other camera apps, check "
                 "Windows camera permissions, then try again."
             )
+            self.status_label.setText("Camera unavailable. Use System Diagnostics or check Windows camera permission.")
             return False
 
         # Around 30 FPS UI refresh
         self.timer.start(33)
+        self.status_label.setText("Camera ready · Face forward · Move slowly")
         return True
 
     def update_camera_frame(self):
@@ -132,6 +140,7 @@ class TryOnScreen(QWidget):
 
         if frame is None:
             self.camera_frame.setText("Camera frame not available.")
+            self.status_label.setText("Tracking temporarily lost. Step back into the centre of the mirror.")
             return
 
         rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)

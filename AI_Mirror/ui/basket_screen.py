@@ -80,7 +80,11 @@ class BasketScreen(QWidget):
                 f"{item['name']}\nSize: {item['size']}  |  Qty: {item['quantity']}  |  "
                 f"£{item['price'] * item['quantity']:.2f}\nLocation: {item['location'] or 'Ask a colleague'}"
             )
-        lines.append(f"\nTOTAL: £{self.basket_service.total():.2f}")
+        original = self.basket_service.original_total()
+        savings = self.basket_service.savings_total()
+        if savings > 0:
+            lines.append(f"\nOriginal total: £{original:.2f}\nYOU SAVE: £{savings:.2f}")
+        lines.append(f"FINAL TOTAL: £{self.basket_service.total():.2f}")
         self.items_label.setText("\n\n".join(lines))
 
         encoder = cv2.QRCodeEncoder_create()

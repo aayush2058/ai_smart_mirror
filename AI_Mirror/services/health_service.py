@@ -30,9 +30,9 @@ class HealthService:
     def _database_status(self):
         try:
             connection = sqlite3.connect(DATABASE_PATH, timeout=2)
-            connection.execute("SELECT 1").fetchone()
+            result = connection.execute("PRAGMA quick_check").fetchone()
             connection.close()
-            return "Healthy"
+            return "Healthy" if result and result[0] == "ok" else f"Integrity warning: {result[0] if result else 'unknown'}"
         except sqlite3.Error as error:
             return f"Error: {error}"
 

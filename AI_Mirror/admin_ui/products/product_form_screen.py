@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QLineEdit, QTextEdit, QComboBox, QCheckBox, QFileDialog,
-    QFrame, QMessageBox, QScrollArea
+    QFrame, QMessageBox, QScrollArea, QDialog
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap
@@ -21,8 +21,8 @@ class ProductFormScreen(QWidget):
         main_layout.setContentsMargins(25, 20, 25, 20)
         main_layout.setSpacing(15)
 
-        title = QLabel("Add Product")
-        title.setStyleSheet("""
+        self.title = QLabel("Add Product")
+        self.title.setStyleSheet("""
             QLabel {
                 font-size: 38px;
                 font-weight: bold;
@@ -31,6 +31,14 @@ class ProductFormScreen(QWidget):
                 border: none;
             }
         """)
+
+        self.mode_notice = QLabel("")
+        self.mode_notice.setWordWrap(True)
+        self.mode_notice.setStyleSheet(
+            "font-size:17px;color:#ffd27a;background:#302817;padding:12px;"
+            "border:1px solid #705a25;border-radius:10px;"
+        )
+        self.mode_notice.hide()
 
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
@@ -61,10 +69,16 @@ class ProductFormScreen(QWidget):
         self.product_code_input = self.create_input("Product code / SKU")
         self.name_input = self.create_input("Product name")
         self.price_input = self.create_input("Price e.g. 12.99")
-        self.colour_input = self.create_input("Colour")
-        self.location_input = self.create_input("Store location")
-        self.sizes_input = self.create_input("Sizes e.g. S:5, M:4, L:2")
-        self.discount_price_input = self.create_input("Discount price optional")
+        self.colour_input = self.create_editable_combo(
+            "Select or type colour", ["Black", "White", "Navy", "Blue", "Red", "Green", "Grey", "Pink", "Beige", "Brown"]
+        )
+        self.location_input = self.create_editable_combo(
+            "Select or type store location", ["Ground Floor", "First Floor", "Men's Section", "Women's Section", "Kids Section", "Accessories", "Front Display"]
+        )
+        self.sizes_input = self.create_editable_combo(
+            "Select a size template or type quantities",
+            ["XS:0, S:0, M:0, L:0, XL:0", "S:0, M:0, L:0", "28:0, 30:0, 32:0, 34:0, 36:0", "One Size:0"]
+        )
 
         self.department_combo = QComboBox()
         self.department_combo.addItems(["Men", "Women", "Kids", "Decors", "Accessories"])
@@ -96,12 +110,24 @@ class ProductFormScreen(QWidget):
         self.available_checkbox.setChecked(True)
 
         self.discount_checkbox = self.create_checkbox("Discount")
+        self.discount_checkbox.toggled.connect(self.toggle_discount_options)
+        self.discount_amount_input = self.create_input("Amount off (£), e.g. 5.00")
+        self.discount_percentage_input = self.create_input("Percentage off (%), e.g. 20")
+        self.discount_amount_input.textEdited.connect(self.clear_discount_percentage)
+        self.discount_percentage_input.textEdited.connect(self.clear_discount_amount)
+        self.discount_options = QFrame()
+        discount_layout = QHBoxLayout(self.discount_options)
+        discount_layout.setContentsMargins(0, 0, 0, 0)
+        discount_layout.addWidget(self.discount_amount_input)
+        discount_layout.addWidget(self.discount_percentage_input)
+        self.discount_options.setStyleSheet("QFrame { background: transparent; border: none; }")
+        self.toggle_discount_options(False)
         self.tryon_enabled_checkbox = self.create_checkbox("Enable Virtual Try-On")
 
-        self.width_input = self.create_input("Try-on width scale e.g. 2.0")
-        self.height_input = self.create_input("Try-on height scale e.g. 1.3")
-        self.vertical_input = self.create_input("Vertical offset e.g. 0.16")
-        self.horizontal_input = self.create_input("Horizontal offset e.g. 5")
+        self.width_input = self.create_editable_combo("Try-on width scale", ["1.0", "1.2", "1.5", "2.0"])
+        self.height_input = self.create_editable_combo("Try-on height scale", ["1.0", "1.2", "1.3", "1.5"])
+        self.vertical_input = self.create_editable_combo("Vertical offset", ["0.0", "0.05", "0.10", "0.16", "0.20"])
+        self.horizontal_input = self.create_editable_combo("Horizontal offset", ["0", "-10", "-5", "5", "10"])
 
         self.image_preview = QLabel("No Image Selected")
         self.image_preview.setAlignment(Qt.AlignCenter)
@@ -133,14 +159,20 @@ class ProductFormScreen(QWidget):
         cancel_button.setStyleSheet(self.grey_button_style())
         cancel_button.clicked.connect(self.on_cancel)
 
-        save_button = QPushButton("Save Product")
-        save_button.setFixedSize(190, 55)
-        save_button.setStyleSheet(self.green_button_style())
-        save_button.clicked.connect(self.handle_save)
+        self.save_button = QPushButton("Save Product")
+        self.save_button.setFixedSize(190, 55)
+        self.save_button.setStyleSheet(self.green_button_style())
+        self.save_button.clicked.connect(self.handle_save)
+
+        preview_button = QPushButton("Preview as Customer")
+        preview_button.setFixedSize(210, 55)
+        preview_button.setStyleSheet(self.blue_button_style())
+        preview_button.clicked.connect(self.preview_as_customer)
 
         button_row.addStretch()
+        button_row.addWidget(preview_button)
         button_row.addWidget(cancel_button)
-        button_row.addWidget(save_button)
+        button_row.addWidget(self.save_button)
 
         form_layout.addWidget(self.product_code_input)
         form_layout.addWidget(self.name_input)
@@ -153,7 +185,7 @@ class ProductFormScreen(QWidget):
         form_layout.addWidget(self.sizes_input)
         form_layout.addWidget(self.available_checkbox)
         form_layout.addWidget(self.discount_checkbox)
-        form_layout.addWidget(self.discount_price_input)
+        form_layout.addWidget(self.discount_options)
         form_layout.addWidget(self.tryon_enabled_checkbox)
         form_layout.addWidget(self.tryon_category_combo)
         form_layout.addWidget(self.width_input)
@@ -168,7 +200,8 @@ class ProductFormScreen(QWidget):
         scroll_container.setLayout(scroll_layout)
         scroll_area.setWidget(scroll_container)
 
-        main_layout.addWidget(title)
+        main_layout.addWidget(self.title)
+        main_layout.addWidget(self.mode_notice)
         main_layout.addWidget(scroll_area)
 
         self.setLayout(main_layout)
@@ -191,6 +224,11 @@ class ProductFormScreen(QWidget):
             QLineEdit:focus {
                 border: 2px solid #2d89ef;
             }
+            QLineEdit:disabled {
+                color: #68737d;
+                background-color: #151b21;
+                border: 1px solid #28323b;
+            }
         """)
         return field
 
@@ -205,6 +243,31 @@ class ProductFormScreen(QWidget):
             }
         """)
         return checkbox
+
+    def create_editable_combo(self, placeholder, values):
+        combo = QComboBox()
+        combo.setEditable(True)
+        combo.addItem("")
+        combo.addItems(values)
+        combo.lineEdit().setPlaceholderText(placeholder)
+        self.style_combo(combo)
+        return combo
+
+    def toggle_discount_options(self, enabled):
+        self.discount_options.setVisible(True)
+        self.discount_amount_input.setEnabled(enabled)
+        self.discount_percentage_input.setEnabled(enabled)
+        if not enabled:
+            self.discount_amount_input.clear()
+            self.discount_percentage_input.clear()
+
+    def clear_discount_percentage(self, text):
+        if text:
+            self.discount_percentage_input.clear()
+
+    def clear_discount_amount(self, text):
+        if text:
+            self.discount_amount_input.clear()
 
     def style_combo(self, combo):
         combo.setFixedHeight(55)
@@ -261,33 +324,65 @@ class ProductFormScreen(QWidget):
         if tryon_category == "None":
             tryon_category = None
 
-        discount_price = self.discount_price_input.text().strip()
-        discount_price = float(discount_price) if discount_price else None
+        product_code = self.product_code_input.text().strip()
+        name = self.name_input.text().strip()
+        price_text = self.price_input.text().strip()
+        if not product_code:
+            raise ValueError("Product code / SKU is required.")
+        if not name:
+            raise ValueError("Product name is required.")
+        if not price_text:
+            raise ValueError("Product price is required.")
+        price = float(price_text)
+        if price <= 0:
+            raise ValueError("Product price must be greater than zero.")
+        if self.tryon_enabled_checkbox.isChecked() and (not self.image_path or tryon_category is None):
+            raise ValueError("Virtual try-on needs a product image and Shirts or Pants category.")
+
+        discount_enabled = self.discount_checkbox.isChecked()
+        amount_text = self.discount_amount_input.text().strip()
+        percentage_text = self.discount_percentage_input.text().strip()
+        discount_type = discount_value = discount_price = None
+        if discount_enabled:
+            if bool(amount_text) == bool(percentage_text):
+                raise ValueError("Enter either an amount off or a percentage off, not both.")
+            if amount_text:
+                discount_type, discount_value = "amount", float(amount_text)
+                if discount_value <= 0 or discount_value > price:
+                    raise ValueError("Discount amount must be more than £0 and no more than the price.")
+                discount_price = round(price - discount_value, 2)
+            else:
+                discount_type, discount_value = "percentage", float(percentage_text)
+                if discount_value <= 0 or discount_value > 100:
+                    raise ValueError("Discount percentage must be between 0 and 100.")
+                discount_price = round(price * (1 - discount_value / 100), 2)
 
         return {
-            "product_code": self.product_code_input.text().strip(),
-            "name": self.name_input.text().strip(),
+            "product_code": product_code,
+            "name": name,
             "department": self.department_combo.currentText(),
             "category": self.category_combo.currentText(),
-            "price": float(self.price_input.text().strip()),
-            "colour": self.colour_input.text().strip(),
+            "price": price,
+            "colour": self.colour_input.currentText().strip(),
             "description": self.description_input.toPlainText().strip(),
             "image_path": self.image_path,
             "available": self.available_checkbox.isChecked(),
-            "discount": self.discount_checkbox.isChecked(),
+            "discount": discount_enabled,
             "discount_price": discount_price,
-            "location": self.location_input.text().strip(),
+            "discount_type": discount_type,
+            "discount_value": discount_value,
+            "location": self.location_input.currentText().strip(),
             "tryon_enabled": self.tryon_enabled_checkbox.isChecked(),
             "tryon_category": tryon_category,
             "sizes": self.parse_sizes(),
-            "width_scale": float(self.width_input.text().strip() or 1.0),
-            "height_scale": float(self.height_input.text().strip() or 1.0),
-            "vertical_offset": float(self.vertical_input.text().strip() or 0.0),
-            "horizontal_offset": int(self.horizontal_input.text().strip() or 0),
+            "width_scale": float(self.width_input.currentText().strip() or 1.0),
+            "height_scale": float(self.height_input.currentText().strip() or 1.0),
+            "vertical_offset": float(self.vertical_input.currentText().strip() or 0.0),
+            "horizontal_offset": int(self.horizontal_input.currentText().strip() or 0),
         }
 
     def parse_sizes(self):
-        text = self.sizes_input.text().strip()
+        text = self.sizes_input.currentText().strip()
 
         if not text:
             return []
@@ -297,26 +392,58 @@ class ProductFormScreen(QWidget):
         for item in text.split(","):
             if ":" in item:
                 size, quantity = item.split(":", 1)
+                quantity_value = int(quantity.strip())
+                if quantity_value < 0:
+                    raise ValueError("Stock quantities cannot be negative.")
+                if any(existing["size"].lower() == size.strip().lower() for existing in result):
+                    raise ValueError(f"Size {size.strip()} is entered more than once.")
                 result.append({
                     "size": size.strip(),
-                    "quantity": int(quantity.strip())
+                    "quantity": quantity_value
                 })
+            else:
+                raise ValueError("Use Size:Quantity format, for example S:5, M:3.")
 
         return result
+
+    def preview_as_customer(self):
+        try:
+            product = self.collect_product_data()
+        except Exception as error:
+            QMessageBox.warning(self, "Preview Needs Valid Details", str(error)); return
+        dialog = QDialog(self); dialog.setWindowTitle("Customer Product Preview"); dialog.setMinimumSize(650, 500)
+        layout = QVBoxLayout(dialog)
+        heading = QLabel("CUSTOMER PREVIEW"); heading.setAlignment(Qt.AlignCenter)
+        heading.setStyleSheet("font-size:16px;color:#8fa0b0;")
+        image = QLabel("No product image"); image.setAlignment(Qt.AlignCenter); image.setFixedHeight(250)
+        full_path = resolve_project_path(product.get("image_path"))
+        if full_path and full_path.exists():
+            pixmap = QPixmap(str(full_path))
+            image.setPixmap(pixmap.scaled(420, 240, Qt.KeepAspectRatio, Qt.SmoothTransformation))
+        price_text = f'£{product["price"]:.2f}'
+        if product.get("discount") and product.get("discount_price") is not None:
+            price_text = f'<span style="text-decoration:line-through;color:#9ba5af;">£{product["price"]:.2f}</span> &nbsp; <span style="color:#00d98b;">£{product["discount_price"]:.2f}</span>'
+        details = QLabel(f'<h1>{product["name"]}</h1><h2>{price_text}</h2><p>{product["description"] or "No description"}</p><p>Colour: {product["colour"] or "Not specified"}<br>Location: {product["location"] or "Not assigned"}</p>')
+        details.setTextFormat(Qt.RichText); details.setWordWrap(True); details.setStyleSheet("color:white;font-size:17px;")
+        close = QPushButton("Close Preview"); close.setFixedHeight(48); close.clicked.connect(dialog.accept)
+        layout.addWidget(heading); layout.addWidget(image); layout.addWidget(details); layout.addWidget(close)
+        dialog.setStyleSheet("background:#151c24; QPushButton{background:#2d89ef;color:white;border-radius:10px;font-size:17px;}")
+        dialog.exec()
 
     def clear_form(self):
         self.product_code_input.clear()
         self.name_input.clear()
         self.price_input.clear()
-        self.colour_input.clear()
-        self.location_input.clear()
+        self.colour_input.setCurrentIndex(0)
+        self.location_input.setCurrentIndex(0)
         self.description_input.clear()
-        self.sizes_input.clear()
-        self.discount_price_input.clear()
-        self.width_input.clear()
-        self.height_input.clear()
-        self.vertical_input.clear()
-        self.horizontal_input.clear()
+        self.sizes_input.setCurrentIndex(0)
+        self.discount_amount_input.clear()
+        self.discount_percentage_input.clear()
+        self.width_input.setCurrentIndex(0)
+        self.height_input.setCurrentIndex(0)
+        self.vertical_input.setCurrentIndex(0)
+        self.horizontal_input.setCurrentIndex(0)
 
         self.available_checkbox.setChecked(True)
         self.discount_checkbox.setChecked(False)
@@ -374,6 +501,9 @@ class ProductFormScreen(QWidget):
     def set_add_mode(self):
         self.editing_product_id = None
         self.clear_form()
+        self.title.setText("Add Product")
+        self.mode_notice.hide()
+        self.save_button.setText("Save Product")
         self.upload_button.setText("Upload Image")
 
     def set_edit_mode(self, product):
@@ -381,20 +511,35 @@ class ProductFormScreen(QWidget):
         self.clear_form()
 
         self.editing_product_id = product.get("id")
+        product_name = str(product.get("name", "Product"))
+        self.title.setText(f"Edit Product — {product_name}")
+        self.mode_notice.setText(
+            "Saving will update this product"
+        )
+        self.mode_notice.show()
+        self.save_button.setText("Save Changes")
 
         self.product_code_input.setText(str(product.get("product_code", "")))
         self.name_input.setText(str(product.get("name", "")))
         self.price_input.setText(str(product.get("price", "")))
-        self.colour_input.setText(str(product.get("colour", "")))
-        self.location_input.setText(str(product.get("location", "")))
+        self.colour_input.setCurrentText(str(product.get("colour", "")))
+        self.location_input.setCurrentText(str(product.get("location", "")))
         self.description_input.setPlainText(str(product.get("description", "")))
 
         self.available_checkbox.setChecked(bool(product.get("available", True)))
         self.discount_checkbox.setChecked(bool(product.get("discount", False)))
         self.tryon_enabled_checkbox.setChecked(bool(product.get("tryon_enabled", False)))
 
-        if product.get("discount_price") is not None:
-            self.discount_price_input.setText(str(product.get("discount_price")))
+        discount_type = product.get("discount_type")
+        discount_value = product.get("discount_value")
+        if discount_type == "percentage" and discount_value is not None:
+            self.discount_percentage_input.setText(str(discount_value))
+        elif discount_type == "amount" and discount_value is not None:
+            self.discount_amount_input.setText(str(discount_value))
+        elif product.get("discount_price") is not None:
+            legacy_amount = float(product.get("price", 0)) - float(product.get("discount_price"))
+            if legacy_amount > 0:
+                self.discount_amount_input.setText(f"{legacy_amount:.2f}")
 
         self.image_path = product.get("image_path") or product.get("image") or ""
         self.load_image_preview(self.image_path)
@@ -408,10 +553,15 @@ class ProductFormScreen(QWidget):
 
         tryon_settings = product.get("tryon_settings") or {}
 
-        self.width_input.setText(str(tryon_settings.get("width_scale", product.get("width_scale", ""))))
-        self.height_input.setText(str(tryon_settings.get("height_scale", product.get("height_scale", ""))))
-        self.vertical_input.setText(str(tryon_settings.get("vertical_offset", product.get("vertical_offset", ""))))
-        self.horizontal_input.setText(str(tryon_settings.get("horizontal_offset", product.get("horizontal_offset", ""))))
+        sizes = product.get("sizes", [])
+        self.sizes_input.setCurrentText(", ".join(
+            f'{item.get("size")}:{item.get("quantity", 0)}' for item in sizes if item.get("size")
+        ))
+
+        self.width_input.setCurrentText(str(tryon_settings.get("width_scale", product.get("width_scale", ""))))
+        self.height_input.setCurrentText(str(tryon_settings.get("height_scale", product.get("height_scale", ""))))
+        self.vertical_input.setCurrentText(str(tryon_settings.get("vertical_offset", product.get("vertical_offset", ""))))
+        self.horizontal_input.setCurrentText(str(tryon_settings.get("horizontal_offset", product.get("horizontal_offset", ""))))
 
 
     def set_combo_value(self, combo, value):

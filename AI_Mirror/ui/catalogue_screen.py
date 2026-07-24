@@ -2,7 +2,7 @@ from pathlib import Path
 
 from PySide6.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QGridLayout, QLabel,
-    QPushButton, QScrollArea, QFrame
+    QPushButton, QScrollArea, QFrame, QLineEdit, QComboBox, QCheckBox
 )
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap
@@ -50,6 +50,21 @@ class CatalogueScreen(QWidget):
                 border: none;
             }
         """)
+
+        filters = QHBoxLayout()
+        self.search_input = QLineEdit()
+        self.search_input.setPlaceholderText("Search products or colours")
+        self.sort_combo = QComboBox()
+        self.sort_combo.addItems(["Recommended", "Price: Low to High", "Price: High to Low", "Name A-Z"])
+        self.stock_only = QCheckBox("In stock only")
+        for widget in (self.search_input, self.sort_combo):
+            widget.setFixedHeight(48)
+            widget.setStyleSheet("font-size:17px;color:white;background:#232a32;border:1px solid #465666;border-radius:10px;padding:8px;")
+        self.stock_only.setStyleSheet("font-size:17px;color:white;")
+        self.search_input.textChanged.connect(self.load_product_cards)
+        self.sort_combo.currentIndexChanged.connect(self.load_product_cards)
+        self.stock_only.toggled.connect(self.load_product_cards)
+        filters.addWidget(self.search_input, 2); filters.addWidget(self.sort_combo, 1); filters.addWidget(self.stock_only)
 
         # -------------------------
         # VERTICAL SCROLL AREA
@@ -119,6 +134,7 @@ class CatalogueScreen(QWidget):
         bottom_bar.addWidget(self.back_button, alignment=Qt.AlignRight)
 
         self.main_layout.addWidget(self.title)
+        self.main_layout.addLayout(filters)
         self.main_layout.addWidget(self.scroll_area)
         self.main_layout.addLayout(bottom_bar)
 
@@ -139,7 +155,19 @@ class CatalogueScreen(QWidget):
     def load_product_cards(self):
         self.clear_products()
 
-        if not self.products:
+        query = self.search_input.text().strip().lower()
+        products = [product for product in self.products
+                    if (not query or query in f"{product.get('name','')} {product.get('colour','')} {product.get('category','')}".lower())
+                    and (not self.stock_only.isChecked() or product.get("available", False))]
+        sort_index = self.sort_combo.currentIndex()
+        if sort_index == 1:
+            products.sort(key=lambda item: float(item.get("price_value", 0)))
+        elif sort_index == 2:
+            products.sort(key=lambda item: float(item.get("price_value", 0)), reverse=True)
+        elif sort_index == 3:
+            products.sort(key=lambda item: str(item.get("name", "")).lower())
+
+        if not products:
             empty_label = QLabel("No products available in this section.")
             empty_label.setAlignment(Qt.AlignCenter)
             empty_label.setStyleSheet("""
@@ -157,7 +185,7 @@ class CatalogueScreen(QWidget):
         # -------------------------
         # 2 COLUMNS, VERTICAL SCROLL
         # -------------------------
-        for index, product in enumerate(self.products):
+        for index, product in enumerate(products):
             card = self.create_product_card(product)
 
             row = index // 2

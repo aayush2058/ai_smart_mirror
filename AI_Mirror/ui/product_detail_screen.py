@@ -22,7 +22,7 @@ class ProductDetailScreen(QWidget):
         self.product = None
 
         self.main_layout = QVBoxLayout()
-        self.main_layout.setContentsMargins(50, 35, 50, 35)
+        self.main_layout.setContentsMargins(34, 25, 34, 28)
         self.main_layout.setSpacing(25)
 
         # -------------------------
@@ -96,8 +96,8 @@ class ProductDetailScreen(QWidget):
         """)
 
         info_layout = QVBoxLayout()
-        info_layout.setContentsMargins(35, 35, 35, 35)
-        info_layout.setSpacing(15)
+        info_layout.setContentsMargins(26, 25, 26, 25)
+        info_layout.setSpacing(11)
 
         self.name_label = QLabel("")
         self.price_label = QLabel("")
@@ -109,21 +109,90 @@ class ProductDetailScreen(QWidget):
         self.recommendation_title = QLabel("Complete Your Outfit")
         self.recommendation_label = QLabel("")
         self.size_selector = QComboBox()
-        self.size_selector.setFixedHeight(48)
-        self.size_selector.setStyleSheet(
-            "font-size: 18px; color: white; background: #293746; "
-            "border: 1px solid #496176; border-radius: 10px; padding: 8px;"
-        )
-        self.add_basket_button = QPushButton("Add Selected Size to Basket")
-        self.add_basket_button.setFixedHeight(52)
+        self.size_selector.setFixedSize(76, 46)
+        arrow_icon = (Path(__file__).resolve().parents[1] / "assets" / "icons" / "chevron_down.svg").as_posix()
+        combo_style = """
+            QComboBox {
+                font-size: 18px;
+                color: white;
+                background-color: #293746;
+                border: 1px solid #496176;
+                border-radius: 9px;
+                padding: 6px 28px 6px 10px;
+            }
+            QComboBox::drop-down {
+                subcontrol-origin: padding;
+                subcontrol-position: top right;
+                width: 27px;
+                border: none;
+                background-color: #293746;
+                border-top-right-radius: 8px;
+                border-bottom-right-radius: 8px;
+            }
+            QComboBox::down-arrow {
+                image: url("__ARROW_ICON__");
+                width: 14px;
+                height: 9px;
+            }
+            QComboBox QAbstractItemView {
+                color: white;
+                background-color: #293746;
+                border: 1px solid #496176;
+                border-radius: 7px;
+                selection-background-color: #2d89ef;
+                padding: 4px;
+            }
+            """.replace("__ARROW_ICON__", arrow_icon)
+        self.size_selector.setStyleSheet(combo_style)
+        self.add_basket_button = QPushButton("Add to Basket")
+        self.quantity_selector = QComboBox()
+        self.quantity_selector.addItems([str(value) for value in range(1, 11)])
+        self.quantity_selector.setFixedSize(72, 46)
+        self.quantity_selector.setStyleSheet(self.size_selector.styleSheet())
+        self.add_basket_button.setMinimumSize(175, 46)
+        self.add_basket_button.setMaximumHeight(46)
         self.add_basket_button.setStyleSheet(
             "font-size: 18px; font-weight: bold; color: white; "
             "background: #2d89ef; border-radius: 11px;"
         )
         self.add_basket_button.clicked.connect(self.handle_add_to_basket)
 
+        self.purchase_row = QFrame()
+        self.purchase_row.setStyleSheet(
+            "QFrame { background:transparent; border:none; }"
+            "QLabel { color:#cdd5dd; font-size:17px; font-weight:bold; border:none; background:transparent; }"
+        )
+        purchase_layout = QHBoxLayout(self.purchase_row)
+        purchase_layout.setContentsMargins(0, 4, 0, 4)
+        purchase_layout.setSpacing(8)
+        size_title = QLabel("SIZE")
+        size_title.setFixedWidth(46)
+        size_title.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        size_title.setStyleSheet(
+            "font-size:15px;font-weight:bold;color:#f2f6f9;"
+            "background:transparent;border:none;"
+        )
+        purchase_layout.addWidget(size_title)
+        purchase_layout.addWidget(self.size_selector)
+        quantity_title = QLabel("QUANTITY")
+        quantity_title.setFixedWidth(82)
+        quantity_title.setAlignment(Qt.AlignRight | Qt.AlignVCenter)
+        quantity_title.setStyleSheet(
+            "font-size:14px;font-weight:bold;color:#f2f6f9;"
+            "background:transparent;border:none;"
+        )
+        purchase_layout.addWidget(quantity_title)
+        purchase_layout.addWidget(self.quantity_selector)
+        purchase_layout.addStretch(1)
+        purchase_layout.addWidget(self.add_basket_button)
+
         self.name_label.setWordWrap(True)
+        self.price_label.setWordWrap(True)
+        self.colour_label.setWordWrap(True)
+        self.size_label.setWordWrap(True)
+        self.available_label.setWordWrap(True)
         self.location_label.setWordWrap(True)
+        self.discount_label.setWordWrap(True)
         self.recommendation_label.setWordWrap(True)
 
         self.name_label.setStyleSheet("""
@@ -198,8 +267,7 @@ class ProductDetailScreen(QWidget):
         info_layout.addWidget(self.available_label)
         info_layout.addWidget(self.location_label)
         info_layout.addWidget(self.discount_label)
-        info_layout.addWidget(self.size_selector)
-        info_layout.addWidget(self.add_basket_button)
+        info_layout.addWidget(self.purchase_row)
         info_layout.addWidget(self.recommendation_title)
         info_layout.addWidget(self.recommendation_label)
         info_layout.addStretch()
@@ -274,12 +342,12 @@ class ProductDetailScreen(QWidget):
         self.size_label.setText(f"Sizes: {sizes_text}")
         self.size_selector.clear()
         self.size_selector.addItems(sizes if isinstance(sizes, list) else [])
+        self.quantity_selector.setCurrentIndex(0)
         can_add = bool(sizes) and bool(self.product.get("available"))
         self.size_selector.setEnabled(can_add)
         self.add_basket_button.setEnabled(can_add)
-        self.add_basket_button.setText(
-            "Add Selected Size to Basket" if can_add else "Currently Unavailable"
-        )
+        self.purchase_row.setVisible(can_add)
+        self.add_basket_button.setText("Add to Basket")
 
         if self.product.get("available", False):
             self.available_label.setText("Availability: In stock")
@@ -352,4 +420,8 @@ class ProductDetailScreen(QWidget):
 
     def handle_add_to_basket(self):
         if self.product and self.size_selector.currentText():
-            self.on_add_to_basket(self.product, self.size_selector.currentText())
+            self.on_add_to_basket(
+                self.product,
+                self.size_selector.currentText(),
+                int(self.quantity_selector.currentText()),
+            )

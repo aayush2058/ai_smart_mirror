@@ -12,6 +12,38 @@ def create_database_schema():
                 created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
             );
 
+            CREATE TABLE IF NOT EXISTS admin_account_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                target_user_id INTEGER,
+                actor_user_id INTEGER,
+                action TEXT NOT NULL,
+                description TEXT NOT NULL,
+                before_values TEXT NOT NULL,
+                after_values TEXT NOT NULL,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                expires_at TEXT NOT NULL,
+                undone INTEGER NOT NULL DEFAULT 0,
+                undone_at TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS prediction_settings (
+                setting_key TEXT PRIMARY KEY,
+                setting_value TEXT NOT NULL,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE TABLE IF NOT EXISTS prediction_runs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                model_type TEXT NOT NULL,
+                status TEXT NOT NULL,
+                sample_count INTEGER NOT NULL DEFAULT 0,
+                horizon_days INTEGER NOT NULL,
+                metrics TEXT NOT NULL,
+                predictions TEXT NOT NULL,
+                created_by INTEGER,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            );
+
             CREATE TABLE IF NOT EXISTS products (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 product_code TEXT NOT NULL UNIQUE,
@@ -66,6 +98,24 @@ def create_database_schema():
                 undone_at TEXT
             );
 
+            CREATE TABLE IF NOT EXISTS admin_change_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                product_id INTEGER,
+                product_name TEXT NOT NULL,
+                section TEXT NOT NULL,
+                description TEXT NOT NULL,
+                operation TEXT NOT NULL,
+                before_values TEXT NOT NULL,
+                after_values TEXT NOT NULL,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                expires_at TEXT NOT NULL,
+                undone INTEGER NOT NULL DEFAULT 0,
+                undone_at TEXT,
+                FOREIGN KEY (product_id) REFERENCES products(id)
+            );
+
+            CREATE INDEX IF NOT EXISTS idx_change_history_created ON admin_change_history(created_at DESC);
+
             CREATE TABLE IF NOT EXISTS analytics_events (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 session_id TEXT NOT NULL,
@@ -83,3 +133,23 @@ def create_database_schema():
             connection.execute("ALTER TABLE products ADD COLUMN discount_type TEXT")
         if "discount_value" not in product_columns:
             connection.execute("ALTER TABLE products ADD COLUMN discount_value REAL")
+        admin_columns = {row["name"] for row in connection.execute("PRAGMA table_info(admin_users)").fetchall()}
+        if "role" not in admin_columns:
+            connection.execute("ALTER TABLE admin_users ADD COLUMN role TEXT NOT NULL DEFAULT 'admin'")
+        if "created_by" not in admin_columns:
+            connection.execute("ALTER TABLE admin_users ADD COLUMN created_by INTEGER")
+        if "last_login_at" not in admin_columns:
+            connection.execute("ALTER TABLE admin_users ADD COLUMN last_login_at TEXT")
+        if "updated_at" not in admin_columns:
+            connection.execute("ALTER TABLE admin_users ADD COLUMN updated_at TEXT")
+            connection.execute("UPDATE admin_users SET updated_at = CURRENT_TIMESTAMP WHERE updated_at IS NULL")
+        connection.execute(
+            "INSERT OR IGNORE INTO prediction_settings(setting_key,setting_value) VALUES('horizon_days','7')"
+        )
+        connection.execute(
+            "INSERT OR IGNORE INTO prediction_settings(setting_key,setting_value) VALUES('minimum_training_rows','30')"
+        )
+        connection.execute(
+            "UPDATE admin_change_history SET expires_at = datetime(created_at, '+24 hours') "
+            "WHERE expires_at < datetime(created_at, '+24 hours')"
+        )

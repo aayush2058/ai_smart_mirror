@@ -26,6 +26,7 @@ from admin_ui.products.product_form_screen import ProductFormScreen
 from services.product_service import ProductService
 from services.image_service import ImageService
 from services.admin_undo_service import AdminUndoService
+from admin_ui.history.change_history_screen import ChangeHistoryScreen
 from services.health_service import HealthService
 from services.logging_service import configure_logging
 from services.runtime_heartbeat import RuntimeHeartbeat
@@ -41,6 +42,10 @@ from admin_ui.auth.admin_login_screen import AdminLoginScreen
 from admin_ui.dashboard.admin_dashboard_screen import AdminDashboardScreen
 from admin_ui.locations.location_management_screen import LocationManagementScreen
 from admin_ui.products.deleted_products_screen import DeletedProductsScreen
+from services.prediction_service import PredictionService
+from admin_ui.superadmin.super_admin_dashboard import SuperAdminDashboard
+from admin_ui.superadmin.account_management_screen import AccountManagementScreen
+from admin_ui.superadmin.prediction_dashboard_screen import PredictionDashboardScreen
 
 class SmartMirrorApp(QMainWindow):
     def __init__(self):
@@ -65,6 +70,7 @@ class SmartMirrorApp(QMainWindow):
         self.basket_service = BasketService()
         self.event_tracker = EventTracker()
         self.metrics_service = MetricsService()
+        self.prediction_service = PredictionService()
         self.catalog = ProductCatalog()
         self.stack = QStackedWidget()
         self.setCentralWidget(self.stack)
@@ -163,7 +169,9 @@ class SmartMirrorApp(QMainWindow):
             on_diagnostics=self.go_to_system_diagnostics,
             on_analytics=self.go_to_retail_insights,
             on_undo=self.undo_last_admin_change,
-            on_logout=self.logout_admin
+            on_history=self.go_to_change_history,
+            on_logout=self.logout_admin,
+            on_super_back=self.go_to_super_admin_dashboard,
         )
 
 
@@ -184,6 +192,34 @@ class SmartMirrorApp(QMainWindow):
         self.analytics_dashboard_screen = AnalyticsDashboardScreen(
             metrics_service=self.metrics_service,
             on_back=self.go_to_admin_dashboard,
+        )
+
+        self.change_history_screen = ChangeHistoryScreen(
+            history_service=self.admin_undo_service,
+            on_back=self.go_to_admin_dashboard,
+            on_changed=self.update_admin_dashboard_summary,
+        )
+
+        self.super_admin_dashboard = SuperAdminDashboard(
+            on_admin=self.go_to_regular_admin_controls,
+            on_predictions=self.go_to_prediction_dashboard,
+            on_accounts=self.go_to_account_management,
+            on_insights=self.go_to_retail_insights,
+            on_diagnostics=self.go_to_system_diagnostics,
+            on_history=self.go_to_change_history,
+            on_logout=self.logout_admin,
+        )
+
+        self.account_management_screen = AccountManagementScreen(
+            auth_service=self.auth_service,
+            current_user=lambda: self.current_admin,
+            on_back=self.go_to_super_admin_dashboard,
+        )
+
+        self.prediction_dashboard_screen = PredictionDashboardScreen(
+            prediction_service=self.prediction_service,
+            current_user=lambda: self.current_admin,
+            on_back=self.go_to_super_admin_dashboard,
         )
 
         self.deleted_products_screen = DeletedProductsScreen(
@@ -212,6 +248,10 @@ class SmartMirrorApp(QMainWindow):
         self.stack.addWidget(self.deleted_products_screen)
         self.stack.addWidget(self.system_diagnostics_screen)
         self.stack.addWidget(self.analytics_dashboard_screen)
+        self.stack.addWidget(self.change_history_screen)
+        self.stack.addWidget(self.super_admin_dashboard)
+        self.stack.addWidget(self.account_management_screen)
+        self.stack.addWidget(self.prediction_dashboard_screen)
 
         self.logger.info("Smart Mirror application initialized")
         self.runtime_heartbeat.start()
@@ -242,7 +282,11 @@ class SmartMirrorApp(QMainWindow):
             self.current_admin = admin
             self.admin_login_screen.show_success("Access verified")
             self.update_admin_dashboard_summary()
-            self.stack.setCurrentWidget(self.admin_dashboard_screen)
+            if admin.get("role") == "super_admin":
+                self.go_to_super_admin_dashboard()
+            else:
+                self.admin_dashboard_screen.set_super_mode(False)
+                self.stack.setCurrentWidget(self.admin_dashboard_screen)
         else:
             self.admin_login_screen.show_error("Incorrect username or password.")
 
@@ -264,12 +308,16 @@ class SmartMirrorApp(QMainWindow):
             1 for product in products
             if product.get("tryon_category")
         )
+        low_stock = sum(1 for product in products if 0 < int(product.get("stock_quantity", 0)) <= 3)
+        out_of_stock = sum(1 for product in products if not product.get("available", False))
 
         self.admin_dashboard_screen.update_summary(
             total,
             available,
             discounted,
-            tryon_enabled
+            tryon_enabled,
+            low_stock,
+            out_of_stock,
         )
 
     def go_to_manage_products(self):
@@ -278,7 +326,7 @@ class SmartMirrorApp(QMainWindow):
         self.stack.setCurrentWidget(self.product_management_screen)
         
     def go_to_add_product(self):
-        self.product_form_screen.clear_form()
+        self.product_form_screen.set_add_mode()
         self.stack.setCurrentWidget(self.product_form_screen)
 
     def go_to_inventory(self):
@@ -299,7 +347,9 @@ class SmartMirrorApp(QMainWindow):
             print("Product ID missing. Cannot update stock.")
             return
 
-        self.inventory_service.replace_sizes(product_id, sizes)
+        self.admin_undo_service.apply_inventory_change(
+            product_id, product.get("name", "Product"), sizes
+        )
 
         print("Stock updated:", product.get("name"))
 
@@ -332,11 +382,9 @@ class SmartMirrorApp(QMainWindow):
             print("Product ID missing. Cannot update location.")
             return
 
-        success = self.product_service.update_product(
-            product_id,
-            {
-                "location": location
-            }
+        success = self.admin_undo_service.apply_product_change(
+            product_id, product.get("name", "Product"), "Location",
+            {"location": location}, "Updated store location"
         )
 
         if success:
@@ -352,14 +400,14 @@ class SmartMirrorApp(QMainWindow):
             print("Product ID missing. Cannot update discount.")
             return
 
-        success = self.admin_undo_service.apply_product_corrections(
-            f"Discount changed for {product.get('name', 'product')}",
-            {product_id: {
+        success = self.admin_undo_service.apply_product_change(
+            product_id, product.get("name", "Product"), "Discount",
+            {
                 "discount": int(discount_enabled),
                 "discount_price": discount_price,
                 "discount_type": discount_type,
                 "discount_value": discount_value,
-            }}
+            }, "Updated product discount"
         )
 
         if success:
@@ -387,6 +435,42 @@ class SmartMirrorApp(QMainWindow):
         self.analytics_dashboard_screen.refresh()
         self.stack.setCurrentWidget(self.analytics_dashboard_screen)
 
+    def go_to_change_history(self):
+        self.change_history_screen.refresh()
+        self.stack.setCurrentWidget(self.change_history_screen)
+
+    def go_to_super_admin_dashboard(self):
+        if not self.current_admin or self.current_admin.get("role") != "super_admin":
+            self.stack.setCurrentWidget(self.admin_dashboard_screen)
+            return
+        users = self.auth_service.list_users()
+        latest = self.prediction_service.latest()
+        self.super_admin_dashboard.set_summary(
+            len(users), sum(1 for user in users if user["active"]),
+            len(self.product_service.get_products()),
+            latest.get("generated_at") if latest else None,
+        )
+        self.stack.setCurrentWidget(self.super_admin_dashboard)
+
+    def go_to_regular_admin_controls(self):
+        self.update_admin_dashboard_summary()
+        self.admin_dashboard_screen.set_super_mode(True)
+        self.stack.setCurrentWidget(self.admin_dashboard_screen)
+
+    def go_to_account_management(self):
+        if not self.current_admin or self.current_admin.get("role") != "super_admin":
+            QMessageBox.warning(self, "Access Denied", "Super-admin access is required.")
+            return
+        self.account_management_screen.refresh()
+        self.stack.setCurrentWidget(self.account_management_screen)
+
+    def go_to_prediction_dashboard(self):
+        if not self.current_admin or self.current_admin.get("role") != "super_admin":
+            QMessageBox.warning(self, "Access Denied", "Super-admin access is required.")
+            return
+        self.prediction_dashboard_screen.refresh()
+        self.stack.setCurrentWidget(self.prediction_dashboard_screen)
+
     def reset_camera_from_diagnostics(self):
         self.tryon_screen.stop_camera()
         self.logger.info("Camera reset requested from System Diagnostics")
@@ -403,7 +487,9 @@ class SmartMirrorApp(QMainWindow):
             print("Product ID missing. Cannot update try-on settings.")
             return
 
-        success = self.product_service.update_tryon_settings(product_id, settings)
+        success = self.admin_undo_service.apply_tryon_settings_change(
+            product_id, product.get("name", "Product"), settings
+        )
 
         if success:
             print("Try-on settings updated:", product.get("name"))
@@ -418,9 +504,9 @@ class SmartMirrorApp(QMainWindow):
             return
 
         action = "enable" if enabled else "disable"
-        success = self.admin_undo_service.apply_product_corrections(
-            f"Undo {action} virtual try-on for {product.get('name', 'product')}.",
-            {product_id: {"tryon_enabled": int(enabled)}},
+        success = self.admin_undo_service.apply_product_change(
+            product_id, product.get("name", "Product"), "Try-On Availability",
+            {"tryon_enabled": int(enabled)}, f"Changed virtual try-on to {action}d"
         )
         if not success:
             QMessageBox.warning(self, "Try-On Settings", "The setting could not be changed.")
@@ -489,14 +575,14 @@ class SmartMirrorApp(QMainWindow):
     def go_back_to_catalogue(self):
         self.stack.setCurrentWidget(self.catalogue_screen)
 
-    def add_product_to_basket(self, product, size):
-        self.basket_service.add(product, size)
-        self.event_tracker.track("basket_added", product.get("id"), {"size": size})
-        self.logger.info("Basket item added: product_id=%s size=%s", product.get("id"), size)
+    def add_product_to_basket(self, product, size, quantity=1):
+        self.basket_service.add(product, size, quantity)
+        self.event_tracker.track("basket_added", product.get("id"), {"size": size, "quantity": quantity})
+        self.logger.info("Basket item added: product_id=%s size=%s quantity=%s", product.get("id"), size, quantity)
         QMessageBox.information(
             self,
             "Added to Basket",
-            f"{product.get('name', 'Product')} in size {size} was added.",
+            f"{quantity} × {product.get('name', 'Product')} in size {size} added.",
         )
 
     def go_to_basket(self):
@@ -526,13 +612,53 @@ class SmartMirrorApp(QMainWindow):
         )
 
     def save_new_product(self, product_data):
+        duplicate = next((item for item in self.product_service.get_products()
+                          if str(item.get("product_code", "")).lower() == str(product_data.get("product_code", "")).lower()
+                          and item.get("id") != self.product_form_screen.editing_product_id), None)
+        if duplicate:
+            QMessageBox.warning(self, "Duplicate Product Code",
+                                f'Product code {product_data.get("product_code")} is already used by {duplicate.get("name")}.' )
+            return
         if self.product_form_screen.editing_product_id:
             product_id = self.product_form_screen.editing_product_id
 
-            success = self.product_service.update_product(
-                product_id,
-                product_data
-            )
+            existing = self.product_service.get_product(product_id) or {}
+            product_name = existing.get("name", "Product")
+            section_fields = {
+                "Price": ("price",),
+                "Identity & Category": ("product_code", "name", "department", "category", "colour"),
+                "Description": ("description",),
+                "Product Image": ("image_path",),
+                "Availability": ("available",),
+                "Location": ("location",),
+                "Discount": ("discount", "discount_price", "discount_type", "discount_value"),
+                "Try-On Product Setup": ("tryon_enabled", "tryon_category"),
+            }
+            results = []
+            for section, fields in section_fields.items():
+                changes = {
+                    field: product_data[field] for field in fields
+                    if field in product_data and product_data[field] != existing.get(field)
+                }
+                if changes:
+                    results.append(self.admin_undo_service.apply_product_change(
+                        product_id, product_name, section, changes, f"Updated {section.lower()}"
+                    ))
+            if "sizes" in product_data:
+                old_sizes = [{"size": item.get("size"), "quantity": item.get("quantity", 0)}
+                             for item in existing.get("sizes", [])]
+                if product_data["sizes"] != old_sizes:
+                    results.append(self.admin_undo_service.apply_inventory_change(
+                        product_id, product_name, product_data["sizes"]
+                    ))
+            fit_fields = ("width_scale", "height_scale", "vertical_offset", "horizontal_offset")
+            new_fit = {field: product_data[field] for field in fit_fields if field in product_data}
+            old_fit = existing.get("tryon_settings") or {}
+            if new_fit and any(new_fit[field] != old_fit.get(field) for field in new_fit):
+                results.append(self.admin_undo_service.apply_tryon_settings_change(
+                    product_id, product_name, new_fit
+                ))
+            success = all(results) if results else True
 
             if success:
                 print("Product updated:", product_id)
@@ -540,7 +666,11 @@ class SmartMirrorApp(QMainWindow):
                 print("Product update failed:", product_id)
 
         else:
+            self.admin_undo_service.ensure_hourly_backup()
             product_id = self.product_service.add_product(product_data)
+            self.admin_undo_service.record_created_product_history(
+                product_id, product_data.get("name", "Product")
+            )
             print("Product saved with ID:", product_id)
 
         self.product_form_screen.clear_form()
@@ -579,7 +709,10 @@ class SmartMirrorApp(QMainWindow):
         
     def go_to_admin_dashboard(self):
         self.update_admin_dashboard_summary()
-        self.stack.setCurrentWidget(self.admin_dashboard_screen)
+        if self.current_admin and self.current_admin.get("role") == "super_admin":
+            self.go_to_super_admin_dashboard()
+        else:
+            self.stack.setCurrentWidget(self.admin_dashboard_screen)
 
 
     def go_to_edit_product(self, product):
@@ -628,7 +761,10 @@ class SmartMirrorApp(QMainWindow):
             product_id = item.get("id")
 
             if product_id:
-                self.product_service.delete_product(product_id)
+                self.admin_undo_service.apply_product_change(
+                    product_id, item.get("name", "Product"), "Product Status",
+                    {"active": 0}, "Deleted product from active catalogue"
+                )
 
         self.go_to_manage_products()
         self.update_admin_dashboard_summary()
@@ -657,7 +793,10 @@ class SmartMirrorApp(QMainWindow):
             print("Product ID missing. Cannot restore.")
             return
 
-        success = self.product_service.restore_product(product_id)
+        success = self.admin_undo_service.apply_product_change(
+            product_id, product.get("name", "Product"), "Product Status",
+            {"active": 1}, "Restored product to active catalogue"
+        )
 
         if success:
             print("Restored product:", product.get("name"))

@@ -308,6 +308,7 @@ class DiscountUpdateDialog(QDialog):
             field.setStyleSheet(input_style)
         self.amount_input.textEdited.connect(self.clear_percentage)
         self.percentage_input.textEdited.connect(self.clear_amount)
+        self.discount_checkbox.toggled.connect(self.toggle_discount_fields)
         dtype, value = product.get("discount_type"), product.get("discount_value")
         if dtype == "percentage" and value is not None:
             self.percentage_input.setText(str(value))
@@ -320,6 +321,8 @@ class DiscountUpdateDialog(QDialog):
         amount_column.addWidget(amount_label); amount_column.addWidget(self.amount_input)
         percentage_column.addWidget(percentage_label); percentage_column.addWidget(self.percentage_input)
         fields.addLayout(amount_column); fields.addLayout(percentage_column)
+        self.amount_label = amount_label
+        self.percentage_label = percentage_label
 
         button_row = QHBoxLayout()
 
@@ -345,6 +348,7 @@ class DiscountUpdateDialog(QDialog):
 
         self.setLayout(main_layout)
         self.setStyleSheet("background-color: #10151c;")
+        self.toggle_discount_fields(self.discount_checkbox.isChecked())
 
     def handle_save(self):
         try:
@@ -384,6 +388,34 @@ class DiscountUpdateDialog(QDialog):
     def clear_amount(self, text):
         if text:
             self.amount_input.clear()
+
+    def toggle_discount_fields(self, enabled):
+        for widget in (
+            self.amount_input, self.percentage_input,
+            self.amount_label, self.percentage_label,
+        ):
+            widget.setEnabled(enabled)
+        if not enabled:
+            self.amount_input.clear()
+            self.percentage_input.clear()
+        input_style = """
+            QLineEdit {
+                font-size: 17px; color: white; background-color: #1c2530;
+                border: 1px solid #34495e; border-radius: 10px; padding-left: 12px;
+            }
+            QLineEdit:disabled {
+                color: #68737d; background-color: #151b21;
+                border: 1px solid #28323b;
+            }
+        """
+        self.amount_input.setStyleSheet(input_style)
+        self.percentage_input.setStyleSheet(input_style)
+        label_style = (
+            "QLabel { font-size:15px;color:#c8d0d8;border:none; }"
+            "QLabel:disabled { color:#59636c; }"
+        )
+        self.amount_label.setStyleSheet(label_style)
+        self.percentage_label.setStyleSheet(label_style)
 
     def green_button_style(self):
         return """
